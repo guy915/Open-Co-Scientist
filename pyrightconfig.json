@@ -1,0 +1,66 @@
+// Editor-only configuration. The enforced gates stay mypy (app, engine,
+// evaluations, mcp_server) and ruff; nothing in CI reads this file. It exists
+// because an editor's Pyright, rooted at the repo, resolves neither the
+// interpreter nor the import roots: it has no venv to read third-party
+// packages from, so every third-party import in a file that is perfectly
+// type-clean under mypy reads as an unknown symbol.
+//
+// One venv per config is all Pyright supports, so this points at the root
+// .venv that the Makefile builds (VENV := $(ROOT)/.venv) and that every test
+// target runs from -- it carries the editable co_scientist_engine install.
+// It deliberately does *not* point at app/.venv,
+// which is a stale leftover missing declared dependencies (pypdf) and produces phantom unresolved-import errors. The
+// mcp_server package keeps its own 3.12 environment at .venv-mcp (see
+// AGENTS.md) whose third-party imports this cannot resolve; run mypy from
+// engine/mcp_server for that package.
+//
+// executionEnvironments is first-match-wins, so engine/mcp_server must stay
+// ahead of engine. The evaluations entry carries "." because its modules
+// import themselves by their package path ("from evaluations._artifacts import
+// ...") , which needs the repository root on the path, not the package dir.
+//
+// reportUnusedFunction is off because it is structurally wrong for this
+// codebase, not merely noisy. Pyright treats a leading underscore as "private
+// to this module" and does no reverse-dependency search, but this repo's
+// split convention deliberately moves _private helpers into sibling modules
+// that the parent re-exports, so the seams tests monkeypatch keep resolving.
+// Measured over app + engine + evaluations: 315 functions flagged, of which
+// 311 are referenced from another file and 3 more are FastAPI route handlers
+// reached through their @app.get decorator. One was genuinely dead. At that
+// ratio the rule generates delete-lists that would remove working code. The
+// cost of switching it off is that a dead private function no longer
+// announces itself; grep-tracing a suspect symbol repo-wide is the
+// replacement, and is what found the one real case.
+{
+  "venvPath": ".",
+  "venv": ".venv",
+  "pythonVersion": "3.12",
+  "reportUnusedFunction": "none",
+  "exclude": [
+    "**/node_modules",
+    "**/__pycache__",
+    "**/.venv*",
+    "**/build",
+    "**/dist",
+    "references",
+    "corpus"
+  ],
+  "executionEnvironments": [
+    {
+      "root": "app",
+      "extraPaths": ["engine/src"]
+    },
+    {
+      "root": "engine/mcp_server",
+      "extraPaths": ["engine"]
+    },
+    {
+      "root": "engine",
+      "extraPaths": ["engine/src"]
+    },
+    {
+      "root": "evaluations",
+      "extraPaths": [".", "evaluations", "app", "engine/src"]
+    }
+  ]
+}

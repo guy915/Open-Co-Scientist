@@ -1,0 +1,130 @@
+# Enforce package boundaries with `make arch`.
+# Every ignore_imports entry is a current violation. A fix deletes its entry;
+# evaluations/tests/test_import_contracts.py pins the count, so it only shrinks.
+
+[importlinter]
+root_packages =
+    co_scientist
+include_external_packages = True
+
+[importlinter:contract:layers]
+name = Layers (ADR-001)
+type = layers
+layers =
+    co_scientist.serving
+    co_scientist.main
+    co_scientist.api
+    co_scientist.orchestration
+    co_scientist.science
+    co_scientist.domains.chat
+    co_scientist.domains.report
+    co_scientist.domains.safety
+    co_scientist.domains.research_state
+    co_scientist.domains.documents : co_scientist.domains.access : co_scientist.domains.feedback
+    co_scientist.platform.retrieval
+    co_scientist.platform.llm : co_scientist.platform.sandbox : co_scientist.platform.db
+    co_scientist.platform.telemetry
+    co_scientist.core
+
+[importlinter:contract:agents]
+name = Science agents are independent
+type = independence
+modules =
+    co_scientist.science.generation
+    co_scientist.science.reflection
+    co_scientist.science.ranking
+    co_scientist.science.evolution
+    co_scientist.science.proximity
+    co_scientist.science.meta_review
+    co_scientist.science.supervisor
+    co_scientist.science.safety_screen
+
+[importlinter:contract:fastapi]
+name = FastAPI only in api and main
+type = forbidden
+source_modules =
+    co_scientist.orchestration
+    co_scientist.science
+    co_scientist.domains.chat
+    co_scientist.domains.report
+    co_scientist.domains.safety
+    co_scientist.domains.research_state
+    co_scientist.domains.documents
+    co_scientist.domains.access
+    co_scientist.domains.feedback
+    co_scientist.platform.retrieval
+    co_scientist.platform.llm
+    co_scientist.platform.sandbox
+    co_scientist.platform.db
+    co_scientist.platform.telemetry
+    co_scientist.core
+forbidden_modules =
+    fastapi
+    starlette
+allow_indirect_imports = True
+
+[importlinter:contract:litellm]
+name = litellm only in the LLM gateway
+type = forbidden
+source_modules =
+    co_scientist.serving
+    co_scientist.main
+    co_scientist.api
+    co_scientist.orchestration
+    co_scientist.science
+    co_scientist.domains.chat
+    co_scientist.domains.report
+    co_scientist.domains.safety
+    co_scientist.domains.research_state
+    co_scientist.domains.documents
+    co_scientist.domains.access
+    co_scientist.domains.feedback
+    co_scientist.platform.retrieval
+    co_scientist.platform.sandbox
+    co_scientist.platform.db
+    co_scientist.platform.telemetry
+    co_scientist.core
+forbidden_modules =
+    litellm
+allow_indirect_imports = True
+
+[importlinter:contract:httpx]
+name = httpx only in the LLM gateway and retrieval
+type = forbidden
+source_modules =
+    co_scientist.serving
+    co_scientist.main
+    co_scientist.api
+    co_scientist.orchestration
+    co_scientist.science
+    co_scientist.domains.chat
+    co_scientist.domains.report
+    co_scientist.domains.safety
+    co_scientist.domains.research_state
+    co_scientist.domains.documents
+    co_scientist.domains.access
+    co_scientist.domains.feedback
+    co_scientist.platform.sandbox
+    co_scientist.platform.db
+    co_scientist.platform.telemetry
+    co_scientist.core
+forbidden_modules =
+    httpx
+allow_indirect_imports = True
+
+[importlinter:contract:sqlite]
+name = sqlite3 only in platform.db, domains and orchestration
+type = forbidden
+source_modules =
+    co_scientist.serving
+    co_scientist.main
+    co_scientist.api
+    co_scientist.science
+    co_scientist.platform.retrieval
+    co_scientist.platform.llm
+    co_scientist.platform.sandbox
+    co_scientist.platform.telemetry
+    co_scientist.core
+forbidden_modules =
+    sqlite3
+allow_indirect_imports = True

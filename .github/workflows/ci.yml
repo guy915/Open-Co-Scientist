@@ -1,0 +1,559 @@
+# Tests are hermetic: no external service traffic, model keys, or retries.
+# Main retains comprehensive results for every commit; PR jobs are filtered.
+name: CI
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, edited]
+  push:
+    branches: [main]
+  workflow_call:
+  workflow_dispatch:
+
+env:
+  LITELLM_LOCAL_MODEL_COST_MAP: "True"
+
+# PR diffs use the API; other events select comprehensive checks.
+permissions:
+  contents: read
+  pull-requests: read
+
+# GitHub replaces pending runs even with cancel-in-progress=false.
+# Share PR groups to supersede old commits; keep every other run independent.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  # Filter jobs rather than workflow triggers so skipped jobs still satisfy required checks.
+  changes:
+    name: Affected targets
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      engine: ${{ steps.select.outputs.engine }}
+      app: ${{ steps.select.outputs.app }}
+      frontend: ${{ steps.select.outputs.frontend }}
+      evaluations: ${{ steps.select.outputs.evaluations }}
+      mcp_server: ${{ steps.select.outputs.mcp_server }}
+      e2e: ${{ steps.select.outputs.e2e }}
+      docker: ${{ steps.select.outputs.docker }}
+      root_config: ${{ steps.select.outputs.root_config }}
+      python_lint: ${{ steps.select.outputs.python_lint }}
+      workflows: ${{ steps.select.outputs.workflows }}
+      sandbox: ${{ steps.select.outputs.sandbox }}
+      cross_browser: ${{ steps.select.outputs.cross_browser }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Select affected targets from shared rules
+        id: select
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python -m scripts.select_targets --event
+
+  # MCP and Ruff share an interpreter, while retaining independent step failures.
+  format-lint:
+    name: Format and lint (ruff)
+    needs: changes
+    if: >-
+      needs.changes.outputs.python_lint == 'true' ||
+      needs.changes.outputs.mcp_server == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+      - name: Install ruff
+        if: ${{ !cancelled() && needs.changes.outputs.python_lint == 'true' }}
+        # Pin formatters so unrelated releases cannot change formatting checks.
+        run: python -m pip install ruff==0.15.21
+      - name: Check formatting (engine)
+        if: ${{ !cancelled() && needs.changes.outputs.python_lint == 'true' }}
+        working-directory: engine
+        run: python -m ruff format --check .
+      - name: Lint (engine)
+        if: ${{ !cancelled() && needs.changes.outputs.python_lint == 'true' }}
+        working-directory: engine
+        run: python -m ruff check .
+      - name: Check formatting (app)
+        if: ${{ !cancelled() && needs.changes.outputs.python_lint == 'true' }}
+        working-directory: app
+        run: python -m ruff format --check tests
+      - name: Lint (app)
+        if: ${{ !cancelled() && needs.changes.outputs.python_lint == 'true' }}
+        working-directory: app
+        run: python -m ruff check tests
+      - name: Check formatting (evaluations)
+        if: ${{ !cancelled() && needs.changes.outputs.python_lint == 'true' }}
+        run: python -m ruff format --check evaluations
+      - name: Lint (evaluations)
+        if: ${{ !cancelled() && needs.changes.outputs.python_lint == 'true' }}
+        run: python -m ruff check evaluations
+
+      - name: Set up uv
+        if: ${{ !cancelled() && needs.changes.outputs.mcp_server == 'true' }}
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          version: '0.11.32'
+          enable-cache: false
+      - name: Install MCP server
+        if: ${{ !cancelled() && needs.changes.outputs.mcp_server == 'true' }}
+        # MCP dev extras omit mypy and the defusedxml stubs required by strict arxiv checking.
+        run: uv pip install --system -e "engine/mcp_server[dev]" mypy types-defusedxml
+      - name: Run MCP server test suite
+        if: ${{ !cancelled() && needs.changes.outputs.mcp_server == 'true' }}
+        # The MCP editable install has no import map; resolve it as a directory package from
+        # engine/.
+        working-directory: engine
+        run: python -m pytest mcp_server/tests -q
+      - name: Typecheck MCP server
+        if: ${{ !cancelled() && needs.changes.outputs.mcp_server == 'true' }}
+        # MCP has independent strict configuration; engine mypy excludes it.
+        working-directory: engine/mcp_server
+        run: python -m mypy .
+
+  # Root smoke uses its venv; mypy keeps the setup-backend system environment.
+  typecheck:
+    name: Typecheck (mypy, strict)
+    needs: changes
+    if: >-
+      needs.changes.outputs.engine == 'true' ||
+      needs.changes.outputs.app == 'true' ||
+      needs.changes.outputs.evaluations == 'true' ||
+      needs.changes.outputs.root_config == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up backend
+        # The local action executes this checked-out commit.
+        uses: ./.github/actions/setup-backend # zizmor: ignore[self-repository]
+      - name: Cache mypy incremental data
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            app/.mypy_cache
+            engine/.mypy_cache
+            evaluations/.mypy_cache
+          key: ${{ runner.os }}-mypy-3.12-${{ hashFiles('requirements/*.txt', 'engine/pyproject.toml', 'app/pyproject.toml', 'evaluations/pyproject.toml', '.github/actions/setup-backend/action.yml') }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-mypy-3.12-${{ hashFiles('requirements/*.txt', 'engine/pyproject.toml', 'app/pyproject.toml', 'evaluations/pyproject.toml', '.github/actions/setup-backend/action.yml') }}-
+      - name: Typecheck app, engine and evaluations
+        if: ${{ !cancelled() }}
+        # The Makefile recipe itself, so root-config need not run mypy again.
+        run: make typecheck PY=python
+      - name: Import contracts
+        if: ${{ !cancelled() }}
+        run: make arch PY=python
+
+      - name: Set up Node.js
+        if: ${{ !cancelled() && needs.changes.outputs.root_config == 'true' }}
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24.19.0'
+      - name: Set up Bun
+        if: ${{ !cancelled() && needs.changes.outputs.root_config == 'true' }}
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: '1.3.14'
+      - name: Validate Cloudflare asset routing
+        if: ${{ !cancelled() && needs.changes.outputs.root_config == 'true' }}
+        run: |
+          python -m json.tool wrangler.jsonc > /dev/null
+          node --test app/frontend/worker.test.mjs
+      - name: make setup
+        if: ${{ !cancelled() && needs.changes.outputs.root_config == 'true' }}
+        # Other jobs encode most commands directly; this gate checks the setup and lint
+        # recipes, and the typecheck job runs the typecheck recipe.
+        env:
+          VIRTUAL_ENV: ${{ github.workspace }}/.venv
+        run: make setup PIP="uv pip"
+      - name: make lint
+        if: ${{ !cancelled() && needs.changes.outputs.root_config == 'true' }}
+        run: make lint
+
+  test-engine:
+    name: Engine tests (py${{ matrix.python-version }})
+    needs: changes
+    if: needs.changes.outputs.engine == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      # Keep test results visible when a matrix entry fails.
+      fail-fast: false
+      matrix:
+        # Match the supported package floor and production runtime.
+        python-version: ['3.12']
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Set up uv
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          version: '0.11.32'
+          enable-cache: false
+      - name: Install engine
+        run: uv pip install --system -e "engine[dev]"
+      - name: Run engine test suite
+        working-directory: engine
+        run: python -m pytest -q
+
+  test-app:
+    name: App tests (shard ${{ matrix.shard }}/4)
+    needs: changes
+    if: needs.changes.outputs.app == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up backend
+        # The local action executes this checked-out commit.
+        uses: ./.github/actions/setup-backend # zizmor: ignore[self-repository]
+      - name: Run viewer backend test suite
+        working-directory: app
+        # Tests isolate their stores, so shards and xdist workers share nothing; four
+        # workers oversubscribe the runner because many tests wait on worker polls.
+        env:
+          PYTHONPATH: ${{ github.workspace }}/.github
+          CI_SHARD_INDEX: ${{ matrix.shard }}
+          CI_SHARD_TOTAL: 4
+        run: python -m pytest -q -n 4 -p ci_shard --durations=25
+
+  evaluations:
+    name: Evaluations (tests + offline smoke)
+    needs: changes
+    if: needs.changes.outputs.evaluations == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up backend
+        # The local action executes this checked-out commit.
+        uses: ./.github/actions/setup-backend # zizmor: ignore[self-repository]
+      - name: Evaluation harness tests
+        run: python -m pytest evaluations/tests -q
+      - name: Offline evaluation smoke suite
+        run: python -m evaluations.smoke
+
+  frontend:
+    name: Frontend (lint + test + build)
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: app/frontend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24.19.0'
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: '1.3.14'
+      - name: Cache bun packages
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('app/frontend/bun.lock') }}
+          restore-keys: ${{ runner.os }}-bun-
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Lint (gts)
+        run: bun run lint
+      - name: Test (vitest)
+        run: bun run test
+      - name: Build (tsc + vite + prerender)
+        run: bun run build
+
+  e2e:
+    name: Browser e2e (${{ matrix.name }})
+    needs: changes
+    if: needs.changes.outputs.e2e == 'true'
+    runs-on: ubuntu-24.04
+    env:
+      COSCI_E2E_CHROMIUM_EXECUTABLE: /usr/bin/google-chrome
+      COSCI_E2E_BROWSER_SHARD: ${{ matrix.browser_shard }}
+    strategy:
+      # Keep every shard's results visible when one fails.
+      fail-fast: false
+      matrix:
+        # Each job launches its own isolated stack, so they share nothing.
+        # Duration weights keep stateful files together on one worker.
+        include:
+          - {name: shard 1/8, suite: e2e, args: '', browser_shard: 1/8}
+          - {name: shard 2/8, suite: e2e, args: '', browser_shard: 2/8}
+          - {name: shard 3/8, suite: e2e, args: '', browser_shard: 3/8}
+          - {name: shard 4/8, suite: e2e, args: '', browser_shard: 4/8}
+          - {name: shard 5/8, suite: e2e, args: '', browser_shard: 5/8}
+          - {name: shard 6/8, suite: e2e, args: '', browser_shard: 6/8}
+          - {name: shard 7/8, suite: e2e, args: '', browser_shard: 7/8}
+          - {name: shard 8/8, suite: e2e, args: '', browser_shard: 8/8}
+          - {name: production 1/2, suite: e2e-production, args: '--shard=1/2', browser_shard: ''}
+          - {name: production 2/2, suite: e2e-production, args: '--shard=2/2', browser_shard: ''}
+    # Setup plus the isolated stack share the job timeout.
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+      - name: Set up uv
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          version: '0.11.32'
+          enable-cache: false
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24.19.0'
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: '1.3.14'
+      - name: Build backend venv and frontend deps
+        # The harness pins the repository venv and needs frontend dependencies before
+        # launching Vite. uv installs into that venv in place of its pip.
+        env:
+          VIRTUAL_ENV: ${{ github.workspace }}/.venv
+        run: make setup PIP="uv pip"
+      - name: Report runner Chrome version
+        run: |
+          test -x "$COSCI_E2E_CHROMIUM_EXECUTABLE"
+          "$COSCI_E2E_CHROMIUM_EXECUTABLE" --version
+      - name: Run browser suite
+        run: make ${{ matrix.suite }} E2E_ARGS='${{ matrix.args }}'
+
+  docker-build:
+    name: Docker builds + Compose config smoke
+    needs: changes
+    if: needs.changes.outputs.docker == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - name: Build api image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: Dockerfile.api
+          tags: coscientist-api-ci
+          load: true
+          push: false
+          cache-from: type=gha,scope=ci-api
+          cache-to: type=gha,scope=ci-api,mode=max
+      - name: Build mcp image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: Dockerfile.mcp
+          tags: coscientist-mcp-ci
+          load: true
+          push: false
+          cache-from: type=gha,scope=ci-mcp
+          cache-to: type=gha,scope=ci-mcp,mode=max
+      - name: Build frontend dev image
+        # Loading this large development image from a remote cache costs more than building.
+        run: docker build -t coscientist-ui-ci app/frontend
+      - name: Report image sizes
+        # Image size is an optimization metric; record it on every build.
+        run: docker image ls --format '{{.Repository}} {{.Size}}' 'coscientist-*-ci'
+      - name: Start production images with offline isolated probes
+        run: python scripts/ci/container_smoke.py --api-image coscientist-api-ci --mcp-image coscientist-mcp-ci
+      - name: Derive app/.env from the committed example
+        # Compose env_file must exist; --env-file only supplies interpolation.
+        # Use the committed secret-free example in clean checkouts.
+        working-directory: app
+        run: cp .env.example .env
+      - name: Validate docker-compose.yml
+        # Compose up may clone an absent engine over the network; config validates the graph
+        # offline.
+        working-directory: app
+        run: docker compose config --quiet
+
+  launch-checks:
+    name: Launch metadata, links and secrets
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout complete PR history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+      - name: Install pinned checker dependencies
+        run: python -m pip install markdown-it-py==4.2.0 ruff==0.15.21
+      - name: Offline checker tests and style
+        run: |
+          python -m unittest discover -s scripts/ci/tests -v
+          ruff format --check scripts/ci
+          ruff check scripts/ci
+      - name: Validate tracked Markdown links and anchors
+        run: python scripts/ci/markdown_links.py
+      - name: Check PR title, body and commit messages
+        if: github.event_name == 'pull_request'
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: python scripts/ci/git_hygiene.py
+      - name: Install checksum-verified secret detector
+        if: github.event_name == 'pull_request'
+        run: python scripts/ci/install_tools.py gitleaks "$RUNNER_TEMP/ci-tools"
+      - name: Scan added PR lines for secrets
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          GITLEAKS_BIN: ${{ runner.temp }}/ci-tools/gitleaks
+        run: python scripts/ci/secret_scan.py
+
+  workflow-lint:
+    name: Workflow lint and detector failure proofs
+    needs: changes
+    if: needs.changes.outputs.workflows == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+      - name: Install verified actionlint and gitleaks
+        run: |
+          python scripts/ci/install_tools.py actionlint "$RUNNER_TEMP/ci-tools"
+          python scripts/ci/install_tools.py gitleaks "$RUNNER_TEMP/ci-tools"
+          python -m pip install zizmor==1.30.1
+      - name: Lint all workflows offline
+        env:
+          ACTIONLINT_BIN: ${{ runner.temp }}/ci-tools/actionlint
+        run: python scripts/ci/workflow_lint.py
+      - name: Prove the actual detectors reject unsafe fixtures
+        env:
+          ACTIONLINT_BIN: ${{ runner.temp }}/ci-tools/actionlint
+          GITLEAKS_BIN: ${{ runner.temp }}/ci-tools/gitleaks
+          ZIZMOR_BIN: zizmor
+        run: python -m scripts.ci.tool_tests
+
+  dependency-review:
+    name: Reject high and critical dependency advisories
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Review changed dependencies
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: high
+          fail-on-scopes: runtime, development, unknown
+          license-check: false
+          show-openssf-scorecard: false
+          retry-on-snapshot-warnings: false
+          comment-summary-in-pr: never
+
+  sandbox-macos:
+    name: macOS seatbelt confinement
+    needs: changes
+    if: github.event_name != 'push' && needs.changes.outputs.sandbox == 'true'
+    # Local call uses this commit; actionlint rejects the newer $/ syntax.
+    uses: ./.github/workflows/sandbox-macos.yml # zizmor: ignore[self-repository]
+
+  cross-browser:
+    name: Cross-browser accessibility and keyboard guards
+    needs: changes
+    if: github.event_name == 'pull_request' && needs.changes.outputs.cross_browser == 'true'
+    # Local call uses this commit; actionlint rejects the newer $/ syntax.
+    uses: ./.github/workflows/cross-browser.yml # zizmor: ignore[self-repository]
+
+  cross-browser-full:
+    name: Comprehensive native keyboard guards
+    # Every non-PR event selects all targets; start before the selector finishes.
+    if: github.event_name != 'pull_request'
+    uses: ./.github/workflows/cross-browser.yml # zizmor: ignore[self-repository]
+
+
+  required-checks:
+    name: Required checks
+    if: always()
+    needs:
+      - changes
+      - format-lint
+      - typecheck
+      - test-engine
+      - test-app
+      - evaluations
+      - frontend
+      - e2e
+      - docker-build
+      - launch-checks
+      - workflow-lint
+      - dependency-review
+      - sandbox-macos
+      - cross-browser
+      - cross-browser-full
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout aggregate validator
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Require every selected and always-on check
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: python scripts/ci/required_checks.py

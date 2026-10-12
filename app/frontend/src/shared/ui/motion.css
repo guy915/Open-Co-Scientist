@@ -1,0 +1,175 @@
+/* Enter and exit motion for every overlay. Elements start from these styles on
+   insertion (@starting-style) and return to them while `data-state="closed"`
+   keeps them mounted for the exit. */
+@layer components {
+  .ui-motion-pop,
+  .ui-motion-fade,
+  .ui-motion-rise {
+    transition-property: opacity, scale, translate;
+    transition-duration: var(--motion-duration-medium);
+    transition-timing-function: var(--motion-ease-enter);
+  }
+
+  .ui-motion-pop[data-motion='long'],
+  .ui-motion-fade[data-motion='long'],
+  .ui-motion-rise[data-motion='long'] {
+    transition-duration: var(--motion-duration-long);
+  }
+
+  .ui-motion-pop[data-state='closed'],
+  .ui-motion-fade[data-state='closed'],
+  .ui-motion-rise[data-state='closed'] {
+    pointer-events: none;
+    transition-duration: var(--motion-duration-exit);
+    transition-timing-function: var(--motion-ease-exit);
+  }
+
+  .ui-motion-pop[data-state='closed'] {
+    opacity: 0;
+    scale: var(--motion-pop-scale);
+  }
+
+  .ui-motion-fade[data-state='closed'] {
+    opacity: 0;
+  }
+
+  .ui-motion-rise[data-state='closed'] {
+    opacity: 0;
+    translate: 0 var(--motion-shift);
+  }
+
+  @starting-style {
+    .ui-motion-pop {
+      opacity: 0;
+      scale: var(--motion-pop-scale);
+    }
+
+    .ui-motion-fade {
+      opacity: 0;
+    }
+
+    .ui-motion-rise {
+      opacity: 0;
+      translate: 0 var(--motion-shift);
+    }
+  }
+}
+
+/* Selection thumbs slide between items. The first placement does not animate,
+   and a theme choice made with the thumb keeps its slide through the theme
+   swap's transition freeze. */
+.ui-sliding-thumb[data-animate='true'],
+.theme-switching .ui-sliding-thumb[data-animate='true'] {
+  transition-property: translate, width !important;
+  transition-duration: var(--motion-duration-medium) !important;
+  transition-timing-function: var(--motion-ease-standard) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-sliding-thumb[data-animate='true'],
+  .theme-switching .ui-sliding-thumb[data-animate='true'] {
+    transition: none !important;
+  }
+}
+
+/* Keep entering text opaque so its contrast stays readable during motion.
+   An animation leaves each element's hover transitions independent. */
+@keyframes ui-motion-enter {
+  from {
+    translate: 0 var(--motion-shift);
+  }
+}
+
+@layer components {
+  .ui-motion-enter,
+  .ui-motion-enter-items > * {
+    animation: ui-motion-enter var(--motion-duration-medium)
+      var(--motion-ease-enter) backwards;
+  }
+}
+
+/* A swapped icon scales and fades in over the outgoing one's place. */
+@keyframes ui-motion-swap {
+  from {
+    opacity: 0;
+    scale: var(--motion-pop-scale);
+  }
+}
+
+@layer components {
+  .ui-motion-swap {
+    animation: ui-motion-swap var(--motion-duration-short)
+      var(--motion-ease-enter) backwards;
+  }
+}
+
+/* Disclosures (debate transcript, FAQ) grow open and closed instead of
+   jumping. Browsers without ::details-content keep the instant toggle. */
+@supports selector(::details-content) {
+  details {
+    interpolate-size: allow-keywords;
+  }
+
+  details::details-content {
+    block-size: 0;
+    overflow: clip;
+    transition:
+      block-size var(--motion-duration-medium) var(--motion-ease-standard),
+      content-visibility var(--motion-duration-medium) allow-discrete;
+  }
+
+  details[open]::details-content {
+    block-size: auto;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    details::details-content {
+      transition: none;
+    }
+  }
+}
+
+/* View transitions (theme changes) cross-fade over the long token and never
+   hold input: the overlay lets pointer events through to the live page. */
+::view-transition {
+  pointer-events: none;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--motion-duration-long);
+  animation-timing-function: var(--motion-ease-standard);
+}
+
+/* Loading placeholders share one sweep: the gradient is fixed to the viewport,
+   so a single highlight crosses every shape together instead of each shape
+   running its own. Reduced motion holds the base tone. */
+@keyframes ui-skeleton-sweep {
+  from {
+    background-position: -120vw 0;
+  }
+
+  70%,
+  to {
+    background-position: 20vw 0;
+  }
+}
+
+@layer components {
+  .ui-skeleton {
+    background: linear-gradient(
+        100deg,
+        var(--skeleton-bg) 40%,
+        var(--skeleton-shine) 50%,
+        var(--skeleton-bg) 60%
+      )
+      -120vw 0 / 200vw 100% fixed no-repeat var(--skeleton-bg);
+    animation: ui-skeleton-sweep 2s var(--motion-ease-standard) infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ui-skeleton {
+      animation: none;
+    }
+  }
+}

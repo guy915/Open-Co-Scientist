@@ -1,0 +1,413 @@
+/* Shell product-blue and seed-derived data teal need independent paired
+   light/dark palettes. */
+:root {
+  --cosci-idea-ref-blue: #0b57d0;
+  --cosci-teal: #1a6b6b;
+  --cosci-teal-dark: #0f5454;
+  --cosci-teal-bg: #e0f2ef;
+  --cosci-green: #7fd7bf;
+  --cosci-bg: #fff;
+  --cosci-rail: #e9eef6;
+  --cosci-panel: #f0f4f9;
+  --cosci-border: #c4c7c5;
+  --cosci-text: #1f1f1f;
+  /* At least 4.5:1 on every light surface it sits on (panel, rail, chips). */
+  --cosci-muted: #686b69;
+  --cosci-subtle: #9aa0a6;
+  --cosci-blue: #0b57d0;
+  --cosci-hover: #e9eef6;
+  --cosci-shell-icon: #444746;
+  --cosci-shell-hover-bg: #dfeafc;
+
+  /* Share the brand accent independently of timeline-dot styling; its palette
+     switches to mint in dark. */
+  --cosci-accent: #1a6b6b;
+  --cosci-accent-fg: #f2f2f2;
+
+  --cosci-step-line: color-mix(in srgb, var(--cosci-accent) 38%, #c4c7c5);
+  --cosci-suggestion-bg: transparent;
+  --cosci-composer-border: #e9eef6;
+  --cosci-composer-bg: #fff;
+
+  /* Reference composer shadow exists only in light mode. */
+  --cosci-composer-shadow: 0 2px 12px -2px #e9eef6;
+  --cosci-composer-submit: var(--cosci-teal);
+  --cosci-composer-submit-disabled: #c4c7c5;
+  --cosci-source-button-hover: #444746;
+
+  --cosci-icon-button-hover-bg: #f0f4f9;
+  --cosci-menu-bg: #fff;
+  --cosci-menu-row-hover: #f0f4f9;
+  --cosci-menu-divider: #e9eef6;
+  --cosci-recent-card-hover-bg: #f8fafd;
+  --cosci-recent-chip-bg: #beefbb;
+  --cosci-idea-row-selected-bg: #f4faff;
+  --cosci-idea-chip-bg: #e0f4ff;
+
+  /* Loading placeholders: one pair on the workspace and a deeper pair on
+     tinted surfaces (rail, panel, user bubble). Raised surfaces (composer,
+     cards) are white in light and panel-toned in dark. */
+  --cosci-skeleton: #edf1f7;
+  --cosci-skeleton-shine: #f8fafd;
+  --cosci-skeleton-tinted: #dbe3ee;
+  --cosci-skeleton-tinted-shine: #e6ecf4;
+  --cosci-skeleton-raised: var(--cosci-skeleton);
+  --cosci-skeleton-raised-shine: var(--cosci-skeleton-shine);
+}
+
+:root[data-theme='dark'] {
+  --cosci-bg: #131314;
+  --cosci-rail: #1e1f20;
+  --cosci-panel: #1e1f20;
+  --cosci-border: #444746;
+
+  /* The reference dark shell uses white on-surface rather than stock MD3 grey,
+     with on-surface-variant secondary text. */
+  --cosci-text: #fff;
+  --cosci-muted: #c4c7c5;
+  --cosci-subtle: #8e918f;
+  --cosci-blue: #a8c7fa;
+  --cosci-hover: #282a2c;
+  --cosci-green: #68d0c0;
+  --cosci-shell-icon: var(--cosci-muted);
+  --cosci-shell-hover-bg: #282a2c;
+
+  --cosci-accent: var(--cosci-green);
+  --cosci-accent-fg: #131314;
+  --cosci-step-line: color-mix(
+    in srgb,
+    var(--cosci-accent) 52%,
+    var(--cosci-border)
+  );
+  --cosci-suggestion-bg: transparent;
+  --cosci-composer-border: transparent;
+  --cosci-composer-bg: var(--cosci-panel);
+  --cosci-composer-shadow: none;
+  --cosci-composer-submit: var(--cosci-green);
+  --cosci-composer-submit-disabled: var(--cosci-subtle);
+  --cosci-source-button-hover: var(--cosci-text);
+  --cosci-icon-button-hover-bg: #282a2c;
+  --cosci-menu-bg: #282a2c;
+  --cosci-menu-row-hover: #333537;
+  --cosci-menu-divider: #444746;
+
+  --cosci-recent-card-hover-bg: #282a2c;
+  --cosci-recent-chip-bg: #006c35;
+  --cosci-idea-row-selected-bg: #003d64;
+  --cosci-idea-chip-bg: #133043;
+
+  --cosci-skeleton: #222326;
+  --cosci-skeleton-shine: #2d2f32;
+  --cosci-skeleton-tinted: #2b2d30;
+  --cosci-skeleton-tinted-shine: #36383b;
+  --cosci-skeleton-raised: var(--cosci-skeleton-tinted);
+  --cosci-skeleton-raised-shine: var(--cosci-skeleton-tinted-shine);
+
+  background: var(--cosci-bg);
+}
+
+body {
+  background: var(--cosci-bg, var(--color-th-bg));
+}
+
+.reference-started-session-card {
+  background:
+    linear-gradient(100deg, rgb(16 92 92 / 95%), rgb(42 117 95 / 94%)), #145d5d;
+}
+
+:root[data-theme='dark'] .reference-started-session-card {
+  background:
+    linear-gradient(100deg, rgb(26 110 98 / 98%), rgb(38 138 108 / 96%)),
+    #1a6b5e;
+}
+
+/* New semantic tokens need both light and dark values; reuse baseline pairs
+   when surfaces match rather than fork component colors. */
+:root {
+  --cosci-danger-bg: #fce8e6;
+  --cosci-danger-border: #b3261e;
+  --cosci-danger-fg: #b3261e;
+
+  /* Orange remains distinguishable from danger red at chip size while
+     expressing lesser caution. */
+  --cosci-warning-bg: #ffedd7;
+  --cosci-warning-fg: #9a3412;
+
+  /* The attachment badge’s shared mid-grey keeps white labels legible in both
+     themes. */
+  --cosci-attach-badge: #7d8797;
+  --cosci-attach-badge-fg: #fff;
+
+  /* Inverse-primary stays legible on the dark action pill; ordinary blue would
+     be dark-on-dark. */
+  --cosci-toast-bg: #303030;
+  --cosci-toast-fg: #f2f2f2;
+  --cosci-toast-action: #a8c7fa;
+
+  --cosci-logs-accent-hover: color-mix(
+    in srgb,
+    var(--cosci-accent) 88%,
+    var(--cosci-accent-fg)
+  );
+
+  --cosci-option-marker: #747775;
+
+  --cosci-btn-primary-fg: #fff;
+  --cosci-btn-primary-hover: #0842a0;
+  --cosci-btn-outline-hover-bg: rgb(11 87 208 / 8%);
+  --cosci-btn-secondary-border: #747775;
+
+  --cosci-toggle-on-track: #d3e3fd;
+  --cosci-toggle-off-track: #e1e3e1;
+
+  --cosci-selected-row-fg: #0b57d0;
+
+  /* Bubble controls need a distinct hover shade because the normal hover token
+     equals their background. */
+  --cosci-user-bubble-hover: #dbe2ee;
+
+  --cosci-scrollbar-thumb: #bdc1c6;
+
+  --cosci-settings-segment-bg: #f8fafd;
+  --cosci-settings-card-bg: #f8fafd;
+
+  /* Syntax palettes measure at least 4.5:1 on each code background; brand
+     green is only 1.46:1 in light and is unsafe to reuse. */
+  --cosci-code-comment: #5f6368;
+  --cosci-code-string: #146c2e;
+  --cosci-code-title: #7c3fa6;
+  --cosci-code-number: #9a5b16;
+  --cosci-code-attr: #a3294f;
+}
+
+:root[data-theme='dark'] {
+  --cosci-danger-bg: #3c1715;
+  --cosci-danger-border: #5b2b2b;
+  --cosci-danger-fg: #ffb4aa;
+
+  --cosci-warning-bg: #3a2113;
+  --cosci-warning-fg: #ffb787;
+
+  --cosci-toast-bg: #e3e3e3;
+  --cosci-toast-fg: #303030;
+  --cosci-toast-action: #0b57d0;
+
+  --cosci-option-marker: #8e918f;
+
+  --cosci-btn-primary-fg: #062e6f;
+  --cosci-btn-primary-hover: #9bbbef;
+  --cosci-btn-outline-hover-bg: rgb(168 199 250 / 8%);
+  --cosci-btn-secondary-border: var(--cosci-border);
+
+  --cosci-toggle-on-track: #0842a0;
+  --cosci-toggle-off-track: #444746;
+
+  --cosci-selected-row-fg: #d3e3fd;
+
+  --cosci-user-bubble-hover: #34363a;
+
+  --cosci-scrollbar-thumb: #444746;
+
+  --cosci-settings-segment-bg: #1b1b1b;
+  --cosci-settings-card-bg: #1e1f20;
+
+  --cosci-code-comment: #9aa0a6;
+  --cosci-code-string: #7ee787;
+  --cosci-code-title: #d9a8ff;
+  --cosci-code-number: #ffb787;
+  --cosci-code-attr: #ff9eb0;
+}
+
+/* A fixed bundled highlight palette fails in one theme; token aliases provide
+   paired light/dark syntax colors. */
+.hljs {
+  color: inherit;
+  background: transparent;
+}
+
+.hljs-comment,
+.hljs-quote {
+  color: var(--cosci-code-comment);
+}
+
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-literal,
+.hljs-section,
+.hljs-link,
+.hljs-operator {
+  color: var(--cosci-blue);
+}
+
+.hljs-string,
+.hljs-regexp,
+.hljs-addition,
+.hljs-meta-string,
+.hljs-symbol {
+  color: var(--cosci-code-string);
+}
+
+.hljs-title,
+.hljs-selector-id,
+.hljs-selector-class {
+  color: var(--cosci-code-title);
+}
+
+.hljs-number,
+.hljs-built_in,
+.hljs-type,
+.hljs-class,
+.hljs-variable,
+.hljs-template-variable,
+.hljs-deletion {
+  color: var(--cosci-code-number);
+}
+
+.hljs-attr,
+.hljs-attribute,
+.hljs-name,
+.hljs-tag,
+.hljs-meta,
+.hljs-params,
+.hljs-bullet,
+.hljs-selector-attr,
+.hljs-selector-pseudo,
+.hljs-subst {
+  color: var(--cosci-code-attr);
+}
+
+/* Motion is defined once here; shared/ui components and surface sheets read
+   these instead of writing their own durations or curves. */
+:root {
+  --motion-duration-short: 120ms;
+  --motion-duration-medium: 200ms;
+  --motion-duration-long: 250ms;
+  --motion-duration-exit: 150ms;
+  --motion-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --motion-ease-enter: cubic-bezier(0.05, 0.7, 0.1, 1);
+  --motion-ease-exit: cubic-bezier(0.3, 0, 0.8, 0.15);
+  --motion-pop-scale: 0.96;
+  --motion-shift: 0.5rem;
+}
+
+/* Reduced motion keeps a short fade so state changes stay legible, and drops
+   every scale and travel. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-duration-medium: 100ms;
+    --motion-duration-long: 100ms;
+    --motion-duration-exit: 100ms;
+    --motion-pop-scale: 1;
+    --motion-shift: 0px;
+  }
+}
+
+/* Component roles default to the shell palette; a surface with its own palette
+   (the landing page) re-points them in its own scope. */
+:root {
+  --button-filled-bg: var(--cosci-blue);
+  --button-filled-fg: var(--cosci-btn-primary-fg);
+  --button-filled-hover: var(--cosci-btn-primary-hover);
+  --button-outlined-border: var(--cosci-btn-secondary-border);
+  --button-outlined-fg: var(--cosci-source-button-hover);
+  --button-outlined-hover: var(--cosci-icon-button-hover-bg);
+  --button-accent-border: var(--cosci-option-marker);
+  --button-accent-fg: var(--cosci-blue);
+  --button-accent-hover: var(--cosci-btn-outline-hover-bg);
+  --button-tonal-bg: var(--cosci-accent);
+  --button-tonal-fg: var(--cosci-accent-fg);
+  --button-tonal-hover: var(--cosci-logs-accent-hover);
+  --button-text-fg: var(--cosci-muted);
+  --button-text-hover-fg: var(--cosci-text);
+  --button-text-hover-bg: var(--cosci-hover);
+  --button-link-fg: var(--cosci-blue);
+  --button-disabled-border: var(--cosci-border);
+  --button-disabled-bg: var(--cosci-icon-button-hover-bg);
+  --button-disabled-fg: var(--cosci-option-marker);
+
+  --icon-button-fg: var(--cosci-muted);
+  --icon-button-hover-fg: var(--cosci-text);
+  --icon-button-hover-bg: var(--cosci-hover);
+  --icon-button-disabled-fg: var(--cosci-option-marker);
+
+  --segmented-track: var(--cosci-settings-segment-bg);
+  --segmented-border: var(--cosci-border);
+  --segmented-thumb: var(--cosci-toggle-on-track);
+  --segmented-fg: var(--cosci-shell-icon);
+  --segmented-selected-fg: var(--cosci-selected-row-fg);
+  --segmented-hover: var(--cosci-menu-row-hover);
+
+  --tab-pill-track: var(--cosci-menu-row-hover);
+  --tab-pill-thumb: var(--cosci-accent);
+  --tab-pill-fg: var(--cosci-shell-icon);
+  --tab-pill-selected-fg: var(--cosci-accent-fg);
+  --tab-pill-hover: var(--cosci-hover);
+
+  --chip-neutral-bg: var(--cosci-menu-row-hover);
+  --chip-neutral-fg: var(--cosci-text);
+  --chip-info-bg: var(--cosci-idea-chip-bg);
+  --chip-info-fg: var(--cosci-text);
+  --chip-success-bg: var(--cosci-recent-chip-bg);
+  --chip-success-fg: var(--cosci-text);
+  --chip-accent-bg: var(--cosci-accent);
+  --chip-accent-fg: var(--cosci-accent-fg);
+  --chip-warning-bg: var(--cosci-warning-bg);
+  --chip-warning-fg: var(--cosci-warning-fg);
+  --chip-danger-bg: var(--cosci-danger-bg);
+  --chip-danger-fg: var(--cosci-danger-fg);
+  --chip-danger-border: var(--cosci-danger-border);
+
+  --field-border: var(--cosci-border);
+  --field-focus: var(--cosci-blue);
+  --field-placeholder: var(--cosci-muted);
+
+  --skeleton-bg: var(--cosci-skeleton);
+  --skeleton-shine: var(--cosci-skeleton-shine);
+
+  --scrim: rgb(0 0 0 / 45%);
+  --drawer-shadow: 0.75rem 0 2.5rem rgb(0 0 0 / 38%);
+  --started-card-fg: #fff;
+  --card-shadow: 0 1px 2px rgb(0 0 0 / 15%), 0 2px 10px rgb(0 0 0 / 10%);
+}
+
+/* Dark muted text is nearly as bright as typed text, so placeholders take the
+   subtler grey there. */
+:root[data-theme='dark'] {
+  --field-placeholder: var(--cosci-subtle);
+}
+
+/* Surface scopes: a surface whose background equals a component's default
+   tone re-points that component's tokens here, never at the call site. */
+.ucs-header-action-bar,
+.ucs-nav-panel {
+  --button-text-fg: var(--cosci-shell-icon);
+  --button-text-hover-bg: var(--cosci-shell-hover-bg);
+  --icon-button-fg: var(--cosci-shell-icon);
+  --icon-button-hover-bg: var(--cosci-shell-hover-bg);
+}
+
+.boot-rail,
+.boot-bubble {
+  --skeleton-bg: var(--cosci-skeleton-tinted);
+  --skeleton-shine: var(--cosci-skeleton-tinted-shine);
+}
+
+.boot-composer,
+.boot-recent {
+  --skeleton-bg: var(--cosci-skeleton-raised);
+  --skeleton-shine: var(--cosci-skeleton-raised-shine);
+}
+
+.reference-composer {
+  --icon-button-hover-fg: var(--cosci-source-button-hover);
+  --icon-button-hover-bg: var(--cosci-icon-button-hover-bg);
+  --icon-button-disabled-fg: var(--cosci-composer-submit-disabled);
+}
+
+.reference-user-bubble {
+  --icon-button-hover-bg: var(--cosci-user-bubble-hover);
+}
+
+.reference-toast {
+  --button-link-fg: var(--cosci-toast-action);
+}

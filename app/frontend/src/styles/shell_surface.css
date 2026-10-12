@@ -1,0 +1,24 @@
+/* The pressed color must beat the hover and focus utilities. */
+.ucs-nav-item {
+  transition:
+    background-color var(--motion-duration-short) var(--motion-ease-standard),
+    color var(--motion-duration-short) var(--motion-ease-standard);
+}
+
+.ucs-nav-item:active {
+  background: color-mix(in srgb, var(--cosci-shell-hover-bg) 82%, #000);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ucs-nav-item {
+    transition: none;
+  }
+}
+
+/* Touch hover tooltips are unusable and their full-title pseudos widen the
+   drawer. */
+@media (max-width: 700px) {
+  .ucs-chat-list [data-tooltip].ucs-tooltip-anchor::after {
+    display: none;
+  }
+}

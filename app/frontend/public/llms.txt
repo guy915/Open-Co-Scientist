@@ -1,0 +1,12 @@
+# Open Co-Scientist
+
+Open Co-Scientist is a multi-agent research workspace for creating goals, generating hypotheses, reviewing evidence, ranking ideas, and synthesizing reports.
+
+## Primary pages
+
+- [Home](https://open-coscientist.com): Workspace entry point.
+
+## Notes
+
+- Goal report routes under `/runs/:id` may contain user-created sessions and should not be indexed.
+- Generated research output is not medical or clinical guidance.

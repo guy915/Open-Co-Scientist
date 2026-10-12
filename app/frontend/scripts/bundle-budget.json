@@ -1,0 +1,58 @@
+{
+  "home": {
+    "entries": [
+      "index.html"
+    ],
+    "js": 200000,
+    "css": 24000
+  },
+  "landing": {
+    "entries": [
+      "index.html",
+      "src/features/chat/home_landing.tsx"
+    ],
+    "js": 200000,
+    "css": 24000
+  },
+  "report": {
+    "entries": [
+      "index.html",
+      "src/features/report/run_detail.tsx",
+      "src/shared/ui/markdown_message_renderer.tsx"
+    ],
+    "js": 290000,
+    "css": 24000
+  },
+  "chat": {
+    "entries": [
+      "index.html",
+      "src/shared/ui/markdown_message_renderer.tsx"
+    ],
+    "js": 270000,
+    "css": 24000
+  },
+  "settings": {
+    "entries": [
+      "index.html",
+      "src/features/access/settings_dialog.tsx"
+    ],
+    "js": 200000,
+    "css": 24000
+  },
+  "spend": {
+    "entries": [
+      "index.html",
+      "src/features/diagnostics/spend_view.tsx"
+    ],
+    "js": 200000,
+    "css": 24000
+  },
+  "operations": {
+    "entries": [
+      "index.html",
+      "src/features/diagnostics/launch_operations.tsx"
+    ],
+    "js": 200000,
+    "css": 24000
+  }
+}

@@ -1,0 +1,8 @@
+# Assign repository and community policy to the sole maintainer.
+# Source paths need additional reviewers before mandatory ownership.
+/.github/CODEOWNERS @guy915
+/.github/labels.yml @guy915
+/.github/ISSUE_TEMPLATE/ @guy915
+/.github/pull_request_template.md @guy915
+/.github/rulesets/ @guy915
+/.github/workflows/codeql.yml @guy915

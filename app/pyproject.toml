@@ -1,0 +1,45 @@
+# Tool settings for app/tests. The server and its dependencies are the co-scientist-engine package.
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+# Published abstract fixtures are verbatim corpus data; formatting must not rewrite them.
+extend-exclude = ["dev"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "N",   # pep8-naming
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "A",   # flake8-builtins
+    "C90", # mccabe (cyclomatic complexity)
+    "C4",  # flake8-comprehensions
+    "SIM", # flake8-simplify
+    "RUF", # ruff-specific
+]
+[tool.ruff.lint.mccabe]
+max-complexity = 15
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+plugins = ["pydantic.mypy"]
+exclude = ["^(dev|build|dist)/"]
+
+[[tool.mypy.overrides]]
+module = ["pypdf", "pypdf.*"]
+ignore_missing_imports = true
+
+# Following imports can bypass exclusions; do not typecheck offline docling internals.
+[[tool.mypy.overrides]]
+module = ["dev.*"]
+ignore_missing_imports = true
+follow_imports = "skip"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

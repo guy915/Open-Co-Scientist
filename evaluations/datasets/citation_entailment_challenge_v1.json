@@ -1,0 +1,188 @@
+{
+  "name": "citation-entailment-challenge-v1",
+  "version": 1,
+  "license": "synthetic, CC0 — hand-written examples, no external corpus",
+  "description": "Adversarial claim/evidence panel for the entailment assessor, deliberately harder than citation-entailment-v1. Every item is designed so a lexical-overlap assessor is misled: the passage shares the claim's vocabulary but a semantic reader must reject or invert the naive match. Categories: `numeric_conflict` (the passage reports the opposite direction or an incompatible magnitude with no explicit negation cue), `species_mismatch` (evidence is in a different organism/model than the claim asserts), `temporal_mismatch` (evidence is about a different time window or endpoint), `topic_mention_only` (the passage mentions every keyword but never asserts the claimed relationship), `retracted` (the only supporting passage is a retracted study and must not count as support), `paraphrase_support` (an entailing passage restates the claim with little shared vocabulary), and `paraphrase_contradiction` (a contradicting passage with no lexicon negation marker). Expected labels use supports/contradicts/insufficient. A retracted or unavailable source yields insufficient because no admissible passage supports the claim. Synthetic and legally shareable; NOT Google's private set. Human audit and threshold selection remain an external gap (no annotator panel).",
+  "items": [
+    {
+      "kind": "numeric_conflict",
+      "claim": "Drug A increases progression-free survival in glioblastoma.",
+      "passages": ["In the phase III cohort, Drug A shortened progression-free survival relative to placebo, from 9.2 months to 6.1 months."],
+      "label": "contradicts"
+    },
+    {
+      "kind": "numeric_conflict",
+      "claim": "Kinase X inhibition reduces AML tumor growth by roughly half.",
+      "passages": ["Kinase X inhibition increased AML tumor volume threefold across the cell lines tested."],
+      "label": "contradicts"
+    },
+    {
+      "kind": "numeric_conflict",
+      "claim": "Compound C lowers pathogen P viability at micromolar doses.",
+      "passages": ["Compound C raised pathogen P colony counts at every micromolar dose evaluated."],
+      "label": "contradicts"
+    },
+    {
+      "kind": "numeric_conflict",
+      "claim": "Blocking receptor Y restores CD8 T-cell infiltration.",
+      "passages": ["Blocking receptor Y further depleted CD8 T cells from the tumor microenvironment."],
+      "label": "contradicts"
+    },
+    {
+      "kind": "numeric_conflict",
+      "claim": "Vaccine V raises neutralizing antibody titers by ten-fold.",
+      "passages": ["Vaccine V produced neutralizing antibody titers indistinguishable from the unvaccinated arm."],
+      "label": "contradicts"
+    },
+    {
+      "kind": "species_mismatch",
+      "claim": "Metabolic reprogramming via Z sensitizes human tumors to therapy.",
+      "passages": ["Metabolic reprogramming via Z sensitized murine xenograft tumors to therapy; human tissue was not examined."],
+      "label": "insufficient"
+    },
+    {
+      "kind": "species_mismatch",
+      "claim": "Pathway W drives fibrosis progression in human lung.",
+      "passages": ["Pathway W drove fibrosis progression in a zebrafish fin-regeneration model."],
+      "label": "insufficient"
+    },
+    {
+      "kind": "species_mismatch",
+      "claim": "Gene G confers drug resistance in human breast carcinoma.",
+      "passages": ["Gene G conferred drug resistance in Drosophila S2 cell culture assays."],
+      "label": "insufficient"
+    },
+    {
+      "kind": "temporal_mismatch",
+      "claim": "Vaccine V elicits durable antibody responses at twelve months.",
+      "passages": ["Vaccine V elicited strong antibody responses when measured at day 14 post-immunization; later timepoints were not reported."],
+      "label": "insufficient"
+    },
+    {
+      "kind": "temporal_mismatch",
+      "claim": "Drug A improves five-year overall survival in glioblastoma.",
+      "passages": ["Drug A improved the 30-day tumor response rate in glioblastoma; overall survival was not assessed."],
+      "label": "insufficient"
+    },
+    {
+      "kind": "topic_mention_only",
+      "claim": "Inhibiting kinase X reduces tumor growth in AML.",
+      "passages": ["Kinase X is a serine/threonine kinase frequently discussed in the context of AML tumor growth and cell proliferation."],
+      "label": "insufficient"
+    },
+    {
+      "kind": "topic_mention_only",
+      "claim": "Target T is druggable in solid tumors.",
+      "passages": ["Target T, its solid-tumor expression, and the general concept of druggability have attracted considerable research interest."],
+      "label": "insufficient"
+    },
+    {
+      "kind": "topic_mention_only",
+      "claim": "Compound C is effective against pathogen P.",
+      "passages": ["This review surveys many compounds, including compound C, and many pathogens, including pathogen P, without reporting new efficacy data."],
+      "label": "insufficient"
+    },
+    {
+      "kind": "topic_mention_only",
+      "claim": "Protein Q folds via a two-state mechanism.",
+      "passages": ["Protein Q folding has been studied for decades, and two-state versus multi-state mechanisms remain debated."],
+      "label": "insufficient"
+    },
+    {
+      "kind": "retracted",
+      "claim": "Drug A improves survival in glioblastoma.",
+      "passages": ["RETRACTED: Drug A improved survival in glioblastoma. This article has been retracted for image duplication and unreliable data."],
+      "label": "insufficient"
+    },
+    {
+      "kind": "retracted",
+      "claim": "Gene G is associated with disease D.",
+      "passages": ["This study reporting that gene G is associated with disease D was retracted after the cohort was found to be fabricated."],
+      "label": "insufficient"
+    },
+    {
+      "kind": "paraphrase_support",
+      "claim": "Kinase X inhibition reduces AML tumor growth.",
+      "passages": ["Pharmacologic blockade of the X kinase curtailed leukemic blast expansion in acute myeloid malignancies."],
+      "label": "supports"
+    },
+    {
+      "kind": "paraphrase_support",
+      "claim": "Blocking receptor Y restores immune surveillance.",
+      "passages": ["Antagonism of the Y receptor re-enabled the host's ability to detect and eliminate transformed cells."],
+      "label": "supports"
+    },
+    {
+      "kind": "paraphrase_support",
+      "claim": "Metabolic reprogramming via Z sensitizes cells to therapy.",
+      "passages": ["Rewiring cellular energetics through the Z axis lowered the treatment threshold at which cells succumbed."],
+      "label": "supports"
+    },
+    {
+      "kind": "paraphrase_support",
+      "claim": "Protein Q folds via a two-state mechanism.",
+      "passages": ["Q adopts its native structure through a single cooperative transition with no detectable intermediate."],
+      "label": "supports"
+    },
+    {
+      "kind": "paraphrase_contradiction",
+      "claim": "Compound C is effective against pathogen P.",
+      "passages": ["Across all assays, pathogen P grew just as vigorously in the presence of compound C as in its absence."],
+      "label": "contradicts"
+    },
+    {
+      "kind": "paraphrase_contradiction",
+      "claim": "Blocking receptor Y restores immune surveillance.",
+      "passages": ["Antagonizing the Y receptor left the animals just as unable to reject tumors as before treatment."],
+      "label": "contradicts"
+    },
+    {
+      "kind": "paraphrase_contradiction",
+      "claim": "Metabolic reprogramming via Z sensitizes cells to therapy.",
+      "passages": ["Shifting cellular metabolism through the Z axis made the cells markedly more tolerant of the same therapy."],
+      "label": "contradicts"
+    },
+    {
+      "kind": "paraphrase_support",
+      "claim": "Compound C is effective against pathogen P.",
+      "passages": ["Treatment with compound C sharply curtailed the proliferation of the P organism in culture."],
+      "label": "supports"
+    },
+    {
+      "kind": "numeric_conflict",
+      "claim": "Pathway W drives fibrosis progression.",
+      "passages": ["Genetic ablation of pathway W accelerated fibrosis, whereas its activation was protective."],
+      "label": "contradicts"
+    },
+    {
+      "kind": "topic_mention_only",
+      "claim": "Drug A improves survival in glioblastoma.",
+      "passages": ["Glioblastoma remains lethal, and many agents such as drug A are under active investigation for survival benefit."],
+      "label": "insufficient"
+    },
+    {
+      "kind": "species_mismatch",
+      "claim": "Vaccine V elicits durable antibody responses in humans.",
+      "passages": ["Vaccine V elicited durable antibody responses in rhesus macaques; a human trial has not been conducted."],
+      "label": "insufficient"
+    },
+    {
+      "kind": "paraphrase_support",
+      "claim": "Gene G is associated with disease D.",
+      "passages": ["Carriers of the G locus showed a markedly elevated incidence of the D phenotype in the cohort."],
+      "label": "supports"
+    },
+    {
+      "kind": "numeric_conflict",
+      "claim": "Target T inhibition slows solid tumor growth.",
+      "passages": ["Inhibiting target T accelerated solid tumor growth in every model examined."],
+      "label": "contradicts"
+    },
+    {
+      "kind": "temporal_mismatch",
+      "claim": "Compound C durably suppresses pathogen P over four weeks.",
+      "passages": ["Compound C suppressed pathogen P at the 24-hour readout; suppression at later timepoints was not measured."],
+      "label": "insufficient"
+    }
+  ]
+}

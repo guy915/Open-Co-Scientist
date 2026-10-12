@@ -1,0 +1,3 @@
+# Lightweight runtime closure for the vendored scientific database scripts.
+polite-http
+python-dotenv

@@ -1,0 +1,34 @@
+# syntax=docker/dockerfile:1
+# Railway uses IPv6 private networking; the engine-local image binds IPv4.
+# Digest pins keep base images reproducible.
+FROM python:3.12-slim@sha256:646fb0bca3dd3ea1bcc6feb72c17ed16eed6e10cffc732fcc1478bd3e7f02d7b
+
+WORKDIR /app
+
+COPY requirements/mcp.txt /tmp/requirements-mcp.txt
+RUN pip install --no-cache-dir --require-hashes -r /tmp/requirements-mcp.txt
+COPY LICENSE NOTICE /usr/share/doc/co-scientist/
+
+# Editable package mapping needs the listed subpackage directories before source COPY.
+COPY engine/mcp_server/pyproject.toml engine/mcp_server/README.md engine/mcp_server/LICENSE engine/mcp_server/NOTICE ./mcp_server/
+RUN mkdir -p ./mcp_server/tools/lit_review \
+    && pip install --no-cache-dir --no-deps -e ./mcp_server
+
+ENV PYTHONUNBUFFERED=1
+
+# Set ownership before dropping root; an unprivileged user cannot chown later. Source
+# arrives already owned, so a source edit reuses this layer.
+RUN groupadd --system coscientist \
+    && useradd --system --gid coscientist --home-dir /app coscientist \
+    && chown -R coscientist:coscientist /app
+COPY --chown=coscientist:coscientist --exclude=tests engine/mcp_server/ ./mcp_server/
+USER coscientist
+
+EXPOSE 8888
+
+# Private MCP stays on 8888 despite Railway PORT; both ends must agree.
+# Probe IPv6 loopback because an IPv6 listener is not always dual-stack.
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD python -c "import httpx; httpx.get('http://[::1]:8888', timeout=5.0, trust_env=False).raise_for_status()" || exit 1
+
+CMD ["sh", "-c", "uvicorn mcp_server.server:app --host :: --port 8888"]

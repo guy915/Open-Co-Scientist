@@ -1,0 +1,164 @@
+/* Unlayered final-sheet rules outrank utility layers; placement modifiers rely
+   on source order at equal specificity. */
+[data-tooltip].ucs-tooltip-anchor {
+  position: relative;
+  overflow: visible;
+  --ucs-tooltip-x: -50%;
+  --ucs-tooltip-y: -0.25rem;
+  --ucs-tooltip-open-x: -50%;
+  --ucs-tooltip-open-y: 0;
+  --ucs-tooltip-scale: 0.98;
+  --ucs-tooltip-open-scale: 1;
+}
+
+.reference-attachment-card > button.ucs-tooltip-anchor,
+.reference-attachment-card--image > button.ucs-tooltip-anchor {
+  position: absolute;
+}
+
+[data-tooltip].ucs-tooltip-anchor::after {
+  position: absolute;
+  z-index: var(--z-index-tooltip);
+  display: block;
+  width: max-content;
+  max-width: min(20rem, calc(100vw - 2rem));
+  border: 1px solid var(--cosci-shell-icon);
+  border-radius: 0.45rem;
+  background: var(--cosci-toast-bg);
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 22%),
+    0 3px 8px rgb(0 0 0 / 24%);
+  color: var(--cosci-toast-fg);
+  content: attr(data-tooltip);
+  font-size: 0.78rem;
+  font-weight: 500;
+  line-height: 1.15;
+  opacity: 0;
+  padding: 0.34rem 0.52rem;
+  pointer-events: none;
+  text-align: left;
+  transform: translate(var(--ucs-tooltip-x), var(--ucs-tooltip-y))
+    scale(var(--ucs-tooltip-scale));
+  transition:
+    opacity var(--motion-duration-short) var(--motion-ease-exit),
+    transform var(--motion-duration-short) var(--motion-ease-exit),
+    visibility 0s linear var(--motion-duration-short);
+  visibility: hidden;
+  white-space: nowrap;
+}
+
+[data-tooltip].ucs-tooltip-wrap::after {
+  line-height: 1.22;
+  max-width: min(18rem, calc(100vw - 2rem));
+  overflow-wrap: break-word;
+  white-space: normal;
+}
+
+.ucs-chat-list [data-tooltip].ucs-tooltip-wrap::after {
+  max-width: min(16.5rem, calc(100vw - 2rem));
+}
+
+[data-theme='dark'] [data-tooltip].ucs-tooltip-anchor::after {
+  box-shadow:
+    0 1px 2px rgb(60 64 67 / 18%),
+    0 2px 6px rgb(60 64 67 / 16%);
+}
+
+[data-tooltip].ucs-tooltip-top::after {
+  top: auto;
+  right: auto;
+  bottom: calc(100% + 0.45rem);
+  left: 50%;
+}
+
+[data-tooltip].ucs-tooltip-bottom::after {
+  top: calc(100% + 0.45rem);
+  right: auto;
+  bottom: auto;
+  left: 50%;
+}
+
+[data-tooltip].ucs-tooltip-right {
+  --ucs-tooltip-x: -0.2rem;
+  --ucs-tooltip-y: -50%;
+  --ucs-tooltip-open-x: 0;
+  --ucs-tooltip-open-y: -50%;
+}
+
+[data-tooltip].ucs-tooltip-right::after {
+  top: 50%;
+  right: auto;
+  bottom: auto;
+  left: calc(100% + 0.55rem);
+}
+
+[data-tooltip].ucs-tooltip-left {
+  --ucs-tooltip-x: 0.2rem;
+  --ucs-tooltip-y: -50%;
+  --ucs-tooltip-open-x: 0;
+  --ucs-tooltip-open-y: -50%;
+}
+
+[data-tooltip].ucs-tooltip-left::after {
+  top: 50%;
+  right: calc(100% + 0.55rem);
+  bottom: auto;
+  left: auto;
+}
+
+/* The header sits on the top edge, so every tooltip in it opens below,
+   whatever placement its control asks for. */
+.ucs-header-action-bar [data-tooltip].ucs-tooltip-anchor {
+  --ucs-tooltip-x: -50%;
+  --ucs-tooltip-y: -0.25rem;
+  --ucs-tooltip-open-x: -50%;
+  --ucs-tooltip-open-y: 0;
+}
+
+.ucs-header-action-bar [data-tooltip].ucs-tooltip-anchor::after {
+  top: calc(100% + 0.45rem);
+  right: auto;
+  bottom: auto;
+  left: 50%;
+}
+
+[data-tooltip].ucs-tooltip-align-start::after {
+  right: auto;
+  left: 0;
+  --ucs-tooltip-x: 0;
+  --ucs-tooltip-open-x: 0;
+}
+
+/* Touch taps create sticky hover; reveal tooltips only on devices that can
+   hover. */
+@media (hover: hover) {
+  [data-tooltip].ucs-tooltip-anchor:hover::after {
+    transition:
+      opacity var(--motion-duration-medium) var(--motion-ease-enter),
+      transform var(--motion-duration-medium) var(--motion-ease-enter),
+      visibility 0s;
+    opacity: 1;
+    transform: translate(var(--ucs-tooltip-open-x), var(--ucs-tooltip-open-y))
+      scale(var(--ucs-tooltip-open-scale));
+    visibility: visible;
+  }
+}
+
+[data-tooltip].ucs-tooltip-anchor:focus-visible::after {
+  transition:
+    opacity var(--motion-duration-medium) var(--motion-ease-enter),
+    transform var(--motion-duration-medium) var(--motion-ease-enter),
+    visibility 0s;
+  opacity: 1;
+  transform: translate(var(--ucs-tooltip-open-x), var(--ucs-tooltip-open-y))
+    scale(var(--ucs-tooltip-open-scale));
+  visibility: visible;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-tooltip].ucs-tooltip-anchor::after {
+    --ucs-tooltip-scale: 1;
+    --ucs-tooltip-x: var(--ucs-tooltip-open-x);
+    --ucs-tooltip-y: var(--ucs-tooltip-open-y);
+  }
+}

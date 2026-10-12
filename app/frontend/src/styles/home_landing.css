@@ -1,0 +1,596 @@
+/* Landing editorial typography/media deliberately differs from workbench data
+   surfaces. */
+
+/* Landing follows a one-screen home stage; conversations retain their fixed
+   layout because they never mount it. */
+.ucs-workspace:has(.ucs-page--home .ucs-landing) {
+  grid-template-columns: minmax(0, 1fr);
+  height: 100vh;
+  height: 100dvh;
+}
+
+.ucs-page--home:has(.ucs-landing) {
+  display: block;
+  min-height: 0;
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  /* Contain scroll at both ends so macOS rubber-banding cannot drag the shell
+     and reveal its page background. */
+  overscroll-behavior-y: contain;
+}
+
+html:has(.ucs-landing),
+html:has(.ucs-landing) body {
+  overscroll-behavior-y: none;
+}
+
+.ucs-page--home:has(.ucs-landing) .reference-workspace,
+.ucs-page--home:has(.ucs-landing) .reference-workspace-main {
+  display: block;
+  height: auto;
+  min-height: 0;
+}
+
+.ucs-page--home:has(.ucs-landing) .reference-home-stage {
+  /* Exactly the pane below the 4rem header, so no landing section peeks in. */
+  height: calc(100vh - 4rem);
+  height: calc(100dvh - 4rem);
+}
+
+/* Desktop: the composer's bottom edge lines up with the recents box. Both
+   columns end at the same inset, and recents also reserves the scroll cue's
+   fixed row below the composer. */
+@media (min-width: 1181px) {
+  .ucs-page--home:has(.ucs-landing) .reference-home-stage {
+    --home-bottom: clamp(0.75rem, 1.6vh, 1.25rem);
+    --home-cue: 3.25rem;
+  }
+
+  .ucs-page--home:has(.ucs-landing) .reference-home-main {
+    max-height: calc(100vh - 4rem);
+    max-height: calc(100dvh - 4rem);
+    padding-bottom: var(--home-bottom);
+  }
+
+  .ucs-page--home:has(.ucs-landing) .reference-home-scroll-hint {
+    box-sizing: border-box;
+    height: 2.5rem;
+  }
+
+  .ucs-page--home:has(.ucs-landing) .reference-recents-panel {
+    box-sizing: border-box;
+    max-height: calc(100vh - 4rem);
+    max-height: calc(100dvh - 4rem);
+    padding-bottom: calc(var(--home-bottom) + var(--home-cue));
+  }
+}
+
+/* Recents only shows beside the composer; where it would drop below the first
+   screen (tablet widths) the landing follows directly instead. */
+@media (min-width: 701px) and (max-width: 1180px) {
+  .ucs-page--home:has(.ucs-landing) .reference-recents-panel {
+    display: none;
+  }
+
+  .ucs-page--home:has(.ucs-landing) .reference-home-main {
+    height: calc(100vh - 4rem);
+    height: calc(100dvh - 4rem);
+    padding-bottom: clamp(0.75rem, 1.6vh, 1.25rem);
+  }
+}
+
+/* Placement and the bobbing chevron only; the look is the shared Button. */
+.reference-home-scroll-hint {
+  justify-self: center;
+  align-self: center;
+  margin-top: 0.75rem;
+}
+
+.reference-home-scroll-hint svg {
+  fill: var(--cosci-accent);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .reference-home-scroll-hint svg {
+    animation: ucs-landing-bob 2.4s cubic-bezier(0.05, 0.7, 0.1, 1) infinite;
+  }
+}
+
+@keyframes ucs-landing-bob {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(4px);
+  }
+}
+
+@media (min-width: 1181px) {
+  .reference-home-main > .reference-home-scroll-hint {
+    grid-row: 8;
+  }
+}
+
+@media (min-width: 701px) and (max-width: 1180px) {
+  .reference-home-main > .reference-home-scroll-hint {
+    grid-row: 7;
+  }
+}
+
+@media (max-width: 700px) {
+  .reference-home-scroll-hint {
+    margin-top: 0.35rem;
+  }
+}
+
+.ucs-landing {
+  --l-bg: var(--cosci-bg);
+  --l-surface: #f3f6fb;
+  --l-ink: var(--cosci-text);
+  --l-dot-blue: #4285f4;
+  --l-dot-green: #34a853;
+  --l-dot-yellow: #fbbc04;
+  --l-dot-red: #ea4335;
+  --l-muted: #5f6368;
+  --l-line: #e1e5ea;
+  --l-accent: #0b57d0;
+  --l-c-teal: #bfece3;
+  --l-c-blue: #d3e3fd;
+  --l-c-green: #c4eed0;
+  --l-c-yellow: #ffe28a;
+  --l-c-red: #ffdad6;
+  --l-o-teal: #00201f;
+  --l-o-blue: #041e49;
+  --l-o-green: #072711;
+  --l-o-yellow: #261a00;
+  --l-o-red: #410e0b;
+  --l-display: 'Google Sans', sans-serif;
+  --l-body: 'Google Sans Text', 'Google Sans', sans-serif;
+  --l-ease: cubic-bezier(0.05, 0.7, 0.1, 1);
+
+  /* Shared buttons take the landing palette instead of a fourth recipe. */
+  --button-filled-bg: var(--l-ink);
+  --button-filled-fg: var(--l-bg);
+  --button-filled-hover: color-mix(in srgb, var(--l-ink) 86%, var(--l-bg));
+  --button-outlined-border: var(--l-line);
+  --button-outlined-fg: var(--l-ink);
+  --button-outlined-hover: var(--l-surface);
+  --button-tonal-bg: var(--l-o-teal);
+  --button-tonal-fg: var(--l-c-teal);
+  --segmented-track: var(--l-surface);
+  --segmented-thumb: var(--l-ink);
+  --segmented-fg: var(--l-muted);
+  --segmented-selected-fg: var(--l-bg);
+  --segmented-hover: var(--l-surface);
+  --button-tonal-hover: color-mix(
+    in srgb,
+    var(--l-o-teal) 86%,
+    var(--l-c-teal)
+  );
+
+  background: var(--l-bg);
+  color: var(--l-ink);
+  font-family: var(--l-body);
+  overflow: clip;
+}
+
+:root[data-theme='dark'] .ucs-landing {
+  --l-surface: #1e1f20;
+  --l-muted: #a8abaf;
+  --l-line: #333537;
+  --l-accent: #a8c7fa;
+  --l-c-teal: #123c39;
+  --l-c-blue: #1c3257;
+  --l-c-green: #1b3a25;
+  --l-c-yellow: #3f3417;
+  --l-c-red: #4a2624;
+  --l-o-teal: #bfece3;
+  --l-o-blue: #d3e3fd;
+  --l-o-green: #c4eed0;
+  --l-o-yellow: #ffe28a;
+  --l-o-red: #ffdad6;
+}
+
+.ucs-landing .tone-teal {
+  --tone-c: var(--l-c-teal);
+  --tone-o: var(--l-o-teal);
+}
+.ucs-landing .tone-blue {
+  --tone-c: var(--l-c-blue);
+  --tone-o: var(--l-o-blue);
+}
+.ucs-landing .tone-green {
+  --tone-c: var(--l-c-green);
+  --tone-o: var(--l-o-green);
+}
+.ucs-landing .tone-yellow {
+  --tone-c: var(--l-c-yellow);
+  --tone-o: var(--l-o-yellow);
+}
+.ucs-landing .tone-red {
+  --tone-c: var(--l-c-red);
+  --tone-o: var(--l-o-red);
+}
+
+.ucs-landing :focus-visible {
+  outline: 2px solid var(--l-accent);
+  outline-offset: 3px;
+}
+
+.ucs-landing-spin {
+  transform-origin: 50% 50%;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ucs-landing-spin {
+    animation: ucs-landing-spin 60s linear infinite;
+  }
+}
+
+@keyframes ucs-landing-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* The header copy stays transparent: `.ucs-landing` paints a background that a
+   utility would lose to. */
+.ucs-landing-header-tabs {
+  background: transparent;
+}
+
+/* Change each rail link foreground and background together for text contrast. */
+.ucs-landing-rail a {
+  transition: none;
+}
+
+.ucs-landing-diagram {
+  margin: 48px 0 0;
+  padding: clamp(16px, 3vw, 40px);
+  border-radius: 32px;
+  background: var(--l-surface);
+}
+
+.ucs-landing-diagram-svg,
+.ucs-landing-tree svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  font-family: var(--l-body);
+}
+
+.ucs-landing-diagram-svg text {
+  fill: var(--l-ink);
+  font-size: 17px;
+}
+
+.ucs-landing-box {
+  fill: var(--l-bg);
+  stroke: var(--l-line);
+  stroke-width: 1.5;
+}
+
+.ucs-landing-box-label,
+.ucs-landing-wire-label {
+  fill: var(--l-muted) !important;
+  font-size: 14px !important;
+}
+
+.ucs-landing-node rect {
+  fill: var(--l-bg);
+  stroke: var(--l-line);
+}
+
+.ucs-landing-node.is-you rect,
+.ucs-landing-person {
+  fill: var(--l-c-blue);
+  stroke: none;
+}
+
+.ucs-landing-node.is-you text {
+  fill: var(--l-o-blue);
+}
+
+.ucs-landing-person-glyph {
+  fill: var(--l-o-blue);
+  opacity: 0.55;
+}
+
+.ucs-landing-node.is-supervisor rect {
+  fill: var(--l-ink);
+  stroke: none;
+}
+
+.ucs-landing-node.is-supervisor text {
+  fill: var(--l-bg);
+  font-weight: 500;
+}
+
+.ucs-landing-node.is-output rect {
+  fill: var(--l-c-teal);
+  stroke: none;
+}
+
+.ucs-landing-node.is-output text {
+  fill: var(--l-o-teal);
+}
+
+.ucs-landing-node.is-worker rect {
+  fill: var(--l-surface);
+}
+
+.ucs-landing-node.is-worker text {
+  fill: var(--l-muted);
+  font-size: 15px;
+}
+
+.ucs-landing-wire {
+  fill: none;
+  marker-end: url(#ucs-landing-arrow);
+  stroke: var(--l-muted);
+  stroke-dasharray: 6 5;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+}
+
+/* March dashes toward arrowheads so motion agrees with workflow direction;
+   reduced-motion keeps wires still. */
+@media (prefers-reduced-motion: no-preference) {
+  .ucs-landing-wire {
+    animation: ucs-landing-flow 0.9s linear infinite;
+  }
+}
+
+@keyframes ucs-landing-flow {
+  to {
+    stroke-dashoffset: -11;
+  }
+}
+
+.ucs-landing-wire.is-two-way {
+  marker-start: url(#ucs-landing-arrow);
+}
+
+#ucs-landing-arrow path {
+  fill: var(--l-muted);
+}
+
+.ucs-landing-agent-cell {
+  cursor: pointer;
+  outline: none;
+}
+
+.ucs-landing-agent-cell rect {
+  fill: var(--tone-c);
+  stroke: transparent;
+  stroke-width: 3;
+  transition:
+    stroke 0.3s,
+    transform 0.4s var(--l-ease);
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.ucs-landing-agent-cell text {
+  fill: var(--tone-o) !important;
+  pointer-events: none;
+}
+
+.ucs-landing-agent-cell.is-active rect {
+  stroke: var(--tone-o);
+  transform: scale(1.05);
+}
+
+.ucs-landing-agent-cell:focus-visible rect {
+  stroke: var(--l-accent);
+}
+
+.ucs-landing-diagram-caption {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  min-height: 3.2em;
+  margin-top: 20px;
+  color: var(--l-muted);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.ucs-landing-diagram-caption b {
+  color: var(--l-ink);
+  font-weight: 500;
+}
+
+.ucs-landing-tree {
+  gap: 20px;
+  margin-top: 48px;
+}
+
+.ucs-landing-tree-leaf rect {
+  fill: var(--l-bg);
+  stroke: var(--l-line);
+  transition:
+    fill 0.4s var(--l-ease),
+    stroke 0.4s var(--l-ease);
+}
+
+.ucs-landing-tree-leaf text {
+  fill: var(--l-ink);
+  font-size: 15px;
+}
+
+.ucs-landing-tree-elo {
+  fill: var(--l-muted) !important;
+  font-size: 14px !important;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+.ucs-landing-tree-leaf.is-champion rect {
+  fill: var(--l-c-blue);
+  stroke: var(--l-accent);
+}
+
+.ucs-landing-tree-wire {
+  fill: none;
+  stroke: var(--l-line);
+  stroke-width: 2;
+  transition: stroke 0.5s var(--l-ease);
+}
+
+.ucs-landing-tree-wire.is-won {
+  stroke: var(--l-accent);
+  stroke-width: 2.5;
+}
+
+.ucs-landing-tree-node circle {
+  fill: var(--l-bg);
+  stroke: var(--l-line);
+  stroke-width: 2;
+  transition:
+    fill 0.4s var(--l-ease),
+    stroke 0.4s var(--l-ease);
+}
+
+.ucs-landing-tree-node text {
+  fill: var(--l-muted);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.ucs-landing-tree-node.is-live circle {
+  fill: var(--l-c-yellow);
+  stroke: var(--l-o-yellow);
+}
+
+.ucs-landing-tree-node.is-done circle {
+  fill: var(--l-accent);
+  stroke: var(--l-accent);
+}
+
+.ucs-landing-tree-node.is-done text {
+  fill: var(--l-bg);
+}
+
+.ucs-landing-tree-champ {
+  opacity: 0;
+  transition: opacity 0.5s var(--l-ease);
+}
+
+.ucs-landing-tree-champ.is-shown {
+  opacity: 1;
+}
+
+.ucs-landing-tree-champ rect {
+  fill: var(--l-c-blue);
+}
+
+.ucs-landing-tree-champ text {
+  fill: var(--l-o-blue);
+  font-size: 16px;
+  font-weight: 500;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ucs-landing-tree * {
+    transition: none !important;
+  }
+}
+
+.ucs-landing-panel {
+  position: relative;
+  display: grid;
+  align-content: center;
+  overflow: hidden;
+  padding: 32px;
+  border-radius: 32px;
+  background: var(--l-surface);
+}
+
+.ucs-landing-elo svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-top: 16px;
+}
+
+.ucs-landing-elo-grid line {
+  stroke: var(--l-line);
+}
+
+.ucs-landing-elo-grid text {
+  fill: var(--l-muted);
+  font: 12px var(--l-body);
+}
+
+.ucs-landing-elo-line {
+  fill: none;
+  opacity: 0.45;
+  stroke: var(--l-muted);
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  stroke-width: 1.5;
+  transition: stroke-dashoffset 2.2s var(--l-ease);
+}
+
+.ucs-landing-elo-line.is-leader {
+  opacity: 1;
+  stroke: var(--l-accent);
+  stroke-width: 3;
+  transition-delay: 0.3s;
+}
+
+.ucs-landing-elo.is-drawn .ucs-landing-elo-line {
+  stroke-dashoffset: 0;
+}
+
+.ucs-landing-elo-end {
+  fill: var(--l-accent);
+  opacity: 0;
+  transition: opacity 0.4s 2.2s;
+}
+
+.ucs-landing-elo.is-drawn .ucs-landing-elo-end {
+  opacity: 1;
+}
+
+.ucs-landing-elo-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 12px;
+  color: var(--l-muted);
+  font-size: 14px;
+}
+
+.ucs-landing-elo-legend b {
+  color: var(--l-ink);
+  font-weight: 500;
+}
+
+.ucs-landing-panel-title {
+  margin: 0;
+  font-family: var(--l-display);
+  font-size: 28px;
+  font-weight: 400;
+}
+
+/* Played by the marquee track's utility classes. */
+@keyframes ucs-landing-slide {
+  to {
+    transform: translateX(calc(-50% - 28px));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ucs-landing-elo-line,
+  .ucs-landing-elo-end,
+  .ucs-landing-agent-cell rect {
+    transition: none;
+  }
+}

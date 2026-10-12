@@ -1,0 +1,13 @@
+dbs:
+  - path: ${COSCIENTIST_DB_PATH}
+    # Keep the WAL high-water mark; blocking truncation can stall serving writers.
+    truncate-page-n: 0
+    replica:
+      type: s3
+      bucket: ${LITESTREAM_R2_BUCKET}
+      path: ${LITESTREAM_R2_PATH}
+      endpoint: ${LITESTREAM_R2_ENDPOINT}
+      region: auto
+      force-path-style: true
+      access-key-id: ${LITESTREAM_R2_ACCESS_KEY_ID}
+      secret-access-key: ${LITESTREAM_R2_SECRET_ACCESS_KEY}

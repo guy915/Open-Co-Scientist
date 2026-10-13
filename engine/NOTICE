@@ -1,0 +1,146 @@
+Co-Scientist
+
+First-party software is licensed under the Apache License, Version 2.0.
+The complete license is included in LICENSE. Third-party software and
+non-software materials retain the terms identified below.
+
+This product includes software developed by third parties, under the terms
+of their respective licenses.
+
+-------------------------------------------------------------------------
+OpenAI Codex CLI
+https://github.com/openai/codex
+Licensed under the Apache License, Version 2.0.
+
+  engine/src/co_scientist/platform/sandbox/seatbelt_base_policy.sbpl
+
+    Copied verbatim (with an added provenance header) from
+    codex-rs/sandboxing/src/seatbelt_base_policy.sbpl at commit
+    a397079287e6638b39dda329835350d93222681f.
+
+  engine/src/co_scientist/platform/sandbox/command_safety.py
+
+    The read-only command allowlist and its argument checks are ported
+    to Python from Codex CLI's is_safe_command.rs and modified for this
+    sandbox.
+
+  A copy of the Apache License, Version 2.0 is available at
+  http://www.apache.org/licenses/LICENSE-2.0
+-------------------------------------------------------------------------
+
+-------------------------------------------------------------------------
+Towards an AI co-scientist (Gottweis et al., 2025)
+https://arxiv.org/abs/2502.18864
+Licensed under the Creative Commons Attribution 4.0 International License
+(https://creativecommons.org/licenses/by/4.0/).
+
+  docs/assets/co-scientist-architecture-original.png
+  docs/assets/co-scientist-architecture.png
+
+    Figure 2, extracted from page 9 of arXiv version 1
+    (https://arxiv.org/abs/2502.18864v1). The original is retained;
+    the adaptation uses the landing page's blue, coral, yellow, green,
+    teal and neutral palette and rounded cards. Solid arrows preserve
+    the original connections and directions; the system and group
+    labels use the project's name, Open Co-Scientist.
+
+  engine/src/co_scientist/science/prompts/templates/
+    generation_draft_with_tools.md
+    generation_debate_and_literature.md
+    generation_after_debate.md
+    reflection_observations.md
+    ranking_pairwise.md
+    ranking_debate.md
+    evolution_feasibility.md
+    evolution_out_of_box.md
+    meta_review.md
+
+    Adapted from the eight agent prompts published in the paper's
+    appendix. Changes: template placeholders, run and domain context,
+    tool and evidence-grounding instructions, and JSON output contracts
+    were added, and the wording was edited. The other prompt templates
+    are independent work.
+-------------------------------------------------------------------------
+
+-------------------------------------------------------------------------
+Science Skills (Google DeepMind)
+https://github.com/google-deepmind/science-skills
+Licensed under the Apache License, Version 2.0 (code) and CC-BY 4.0
+(non-software material).
+
+  vendor/science-skills/
+
+    Copied verbatim from revision
+    0b42509800f49e6eb7809505d96e20a890ef99bd (plugin "science" v1.1.0).
+    Upstream ships no NOTICE file of its own, so nothing from one is
+    reproduced here; the full license text is retained at
+    vendor/science-skills/LICENSE.
+
+    The individual skills reach third-party data sources whose terms are
+    separate from this license and not granted by it. Those terms are
+    listed per source in vendor/science-skills/SKILL_LICENSES.md, and
+    most skills additionally require that the user be notified of them
+    before use. The harness writes that notice into each workspace
+    (engine/src/co_scientist/platform/sandbox/skills/licences.py), which satisfies the
+    condition the skills themselves state but reaches nobody, since the
+    workspace is deleted. It therefore also counts the sources each run
+    actually queried (engine/src/co_scientist/platform/sandbox/skills/usage.py) and names
+    them, with a pointer to their terms, in the run's report.
+
+  A copy of the Apache License, Version 2.0 is available at
+  http://www.apache.org/licenses/LICENSE-2.0
+-------------------------------------------------------------------------
+
+-------------------------------------------------------------------------
+Google Sans (font)
+Copyright 2017 Google, Inc.
+Licensed under the SIL Open Font License, Version 1.1.
+
+  app/frontend/node_modules/@fontsource/google-sans/files/*.woff2
+
+    Bundled into the frontend build from the npm package
+    @fontsource/google-sans (app/frontend/src/index.css), which carries
+    the full license text in its LICENSE file.
+-------------------------------------------------------------------------
+
+-------------------------------------------------------------------------
+Material Symbols (Google)
+https://github.com/google/material-design-icons
+Licensed under the Apache License, Version 2.0.
+
+  app/frontend/src/shared/ui/icon.tsx
+
+    SVG path data copied from the npm package @material-symbols/svg-400
+    by app/frontend/scripts/generate_icons.mjs.
+-------------------------------------------------------------------------
+
+-------------------------------------------------------------------------
+Web client dependencies
+
+  The production frontend build bundles third-party npm packages (React,
+  React Router, the unified/micromark Markdown stack, highlight.js,
+  Sentry and others). Minification removes their licence comments, so
+  the build writes third-party-licenses.txt beside the bundle, served at
+  /third-party-licenses.txt, with the name, version, licence and full
+  licence and notice text of every bundled package. The build fails if a
+  bundled package has no licence file or a licence outside the list in
+  app/frontend/scripts/third_party_licenses.mjs.
+-------------------------------------------------------------------------
+
+-------------------------------------------------------------------------
+Frontend images and icons
+
+  app/frontend/src/assets/landing/{flask,helix,molecule,podium}.webp
+  app/frontend/public/social-card.jpg
+
+    AI-generated by the project owner for this project; first-party
+    material under this repository's license.
+
+  app/frontend/public/favicon.svg, favicon.ico, apple-touch-icon.png,
+  icon-192.png, icon-512.png, icon-maskable-512.png
+
+    A flask icon taken from a third-party icon set that the owner did not
+    record; the raster sizes are exports of the same mark. Its source and
+    license are unconfirmed and are not covered by this repository's
+    license.
+-------------------------------------------------------------------------

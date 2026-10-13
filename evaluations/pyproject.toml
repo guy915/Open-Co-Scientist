@@ -1,0 +1,47 @@
+# Tooling configuration only — evaluations/ is not an installable package.
+# It runs from the repo root as a plain package. The ruff
+# and mypy settings mirror engine/ and app/ (Google style, 100 columns,
+# strict typing) so `make lint` / `make typecheck` cover this directory.
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q -n 4"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "N",   # pep8-naming
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "A",   # flake8-builtins
+    "C90", # mccabe (cyclomatic complexity)
+    "C4",  # flake8-comprehensions
+    "SIM", # flake8-simplify
+    "RUF", # ruff-specific
+]
+
+[tool.ruff.lint.mccabe]
+# Every function in this package sits at or below this ceiling. Branch-heavy
+# dispatchers belong in a lookup table, not an if/elif chain.
+max-complexity = 15
+
+[tool.ruff.lint.isort]
+known-first-party = ["evaluations"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+
+# The evals import the viewer backend via a sys.path insert (see the
+# module docstrings); app/ is typechecked by its own `make typecheck` run.
+[[tool.mypy.overrides]]
+module = ["app", "app.*"]
+ignore_missing_imports = true
+follow_imports = "skip"

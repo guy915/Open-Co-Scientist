@@ -1,0 +1,55 @@
+# CI calls this guard for sandbox changes and nightly; manual dispatch is a preflight.
+name: macOS sandbox
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Keep the guard distinct from its calling workflow's cancellation group.
+concurrency:
+  group: sandbox-macos-${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  seatbelt:
+    name: Seatbelt confinement
+    runs-on: macos-latest
+    timeout-minutes: 15
+    env:
+      COSCIENTIST_TEST_DOUBLE: deterministic
+      PYTHON_DOTENV_DISABLED: '1'
+      LITELLM_LOCAL_MODEL_COST_MAP: 'True'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+      - name: Set up uv
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          version: '0.11.32'
+          enable-cache: false
+      - name: Install engine
+        run: uv pip install --system -e "engine[dev]"
+      - name: Require the actual macOS confinement backend
+        run: |
+          python - <<'PY'
+          import shutil
+          import sys
+          from co_scientist.platform.sandbox.argv import sandbox_backend
+          assert sys.platform == 'darwin'
+          assert shutil.which('sandbox-exec'), 'sandbox-exec must be available'
+          assert sandbox_backend() == 'seatbelt'
+          PY
+      - name: Exercise sandbox behavior and escape denials
+        run: python -m pytest engine/tests/test_sandbox.py -q -rs
+      - name: Diagnose confined runtime startup on failure
+        if: failure()
+        run: python scripts/ci/macos_sandbox_diagnostics.py

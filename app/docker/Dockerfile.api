@@ -1,0 +1,20 @@
+# syntax=docker/dockerfile:1
+# Compose installs its mounted engine and its dependencies at startup; Railway bakes them into its image.
+# Digest pins keep base images reproducible.
+FROM python:3.12-slim@sha256:646fb0bca3dd3ea1bcc6feb72c17ed16eed6e10cffc732fcc1478bd3e7f02d7b
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y \
+    git \
+    tesseract-ocr \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p /app/cache
+
+COPY docker/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+EXPOSE 8008
+
+ENTRYPOINT ["/entrypoint.sh"]

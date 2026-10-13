@@ -1,0 +1,17 @@
+title = "Pull request diff secrets"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Exact synthetic test placeholders, never paths or provider prefixes"
+regexTarget = "secret"
+regexes = [
+    '''^sk-test-placeholder$''',
+    '''^ci-smoke-test-placeholder$''',
+    '''^sk-test-1234567890$''',
+    '''^sk-second-0987654321$''',
+    '''^sk-live-9f3c2b71aa4d8e60$''',
+    '''^ghp_0123456789abcdef$''',
+    '''^LOGS_INGEST_PER_MINUTE=120$''',
+]

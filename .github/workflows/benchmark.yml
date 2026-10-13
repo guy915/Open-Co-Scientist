@@ -1,0 +1,394 @@
+# Not CI: a manual, live quality benchmark; see evaluations/README.md. It calls
+# an explicitly selected provider with repository secrets, so it never runs on PRs.
+name: Benchmark
+
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: Collect, compare, report two goal pairs, or check native configuration
+        type: choice
+        options: [collect, compare, preflight, launch-report]
+        default: collect
+      model:
+        description: Explicit model; OpenRouter free default or authorized anthropic route
+        type: string
+        default: openrouter/inclusionai/ling-3.1-flash
+      main_runs:
+        description: Three main IDs for compare; biology,battery IDs or not-run slots for launch-report
+        type: string
+      branch_runs:
+        description: Three branch IDs for compare; biology,battery IDs or not-run slots for launch-report
+        type: string
+      max_judge_calls:
+        description: Physical judge ceiling within the daily request budget; launch-report requires 4
+        type: number
+        default: 6
+      tier:
+        description: Run size
+        type: choice
+        options: [express, standard]
+        default: express
+      goal_id:
+        description: Fixed paired-quality goal
+        type: choice
+        options: [cell-biology, battery-materials, urban-hydrology]
+        default: cell-biology
+      benchmark_ref:
+        description: Git ref whose research behavior is measured
+        type: string
+        default: main
+      max_calls:
+        description: Physical request ceiling (1-450, within the remaining daily request budget)
+        type: number
+        default: 150
+      label:
+        description: Name for this run, e.g. baseline-1
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  native-preflight:
+    if: inputs.operation == 'preflight'
+    name: Native provider configuration (no provider requests)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout trusted harness
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up backend
+        uses: ./.github/actions/setup-backend # zizmor: ignore[self-repository]
+      - name: Validate native configuration without provider authentication
+        env:
+          MODEL_NAME: ${{ inputs.model }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          python - <<'PYCODE'
+          import json, os, socket
+          from importlib.metadata import version
+          from evaluations.benchmark_paid import configure, trusted_transport
+          def deny(*args, **kwargs):
+              raise RuntimeError("provider preflight prohibits network requests")
+          socket.socket.connect = deny
+          socket.create_connection = deny
+          model = os.environ["MODEL_NAME"]
+          try:
+              _, endpoint = configure(model.partition("/")[0], model)
+          except ValueError:
+              print("Native configuration unavailable or invalid; no provider authentication attempted.")
+              raise SystemExit(1)
+          print(json.dumps({
+              "provider": model.partition("/")[0],
+              "endpoint_sha256": endpoint,
+              "request_counter_sha256": vars(trusted_transport())["COUNTER_SHA256"],
+              "sdk": {name: version(name) for name in ("litellm", "httpx", "openai")},
+              "provider_requests": 0,
+              "scientific_result": False,
+          }, sort_keys=True))
+          PYCODE
+  benchmark:
+    if: inputs.operation == 'collect'
+    name: Benchmark (${{ inputs.tier }}, ${{ inputs.label }})
+    runs-on: ubuntu-latest
+    # A hung provider call once held a run for the six-hour runner limit with no
+    # result. The run step stops first, so the result check and uploads still run.
+    timeout-minutes: ${{ inputs.tier == 'standard' && 270 || 150 }}
+    env:
+      MODEL_NAME: ${{ inputs.model }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      TIER: ${{ inputs.tier }}
+      GOAL_ID: ${{ inputs.goal_id }}
+      MAX_CALLS: ${{ inputs.max_calls }}
+      MCP_SERVER_URL: http://127.0.0.1:8888/mcp
+    steps:
+      - name: Checkout measurement harness
+        timeout-minutes: 5
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Prepare isolated research source
+        timeout-minutes: 5
+        env:
+          BENCHMARK_REF: ${{ inputs.benchmark_ref }}
+        run: |
+          git fetch --depth=1 origin "$BENCHMARK_REF"
+          git worktree add --detach "$RUNNER_TEMP/benchmark-source" FETCH_HEAD
+          echo "BENCHMARK_SOURCE=$RUNNER_TEMP/benchmark-source" >> "$GITHUB_ENV"
+      - name: Generate the MCP shared secret
+        timeout-minutes: 1
+        run: |
+          secret="$(openssl rand -hex 32)"
+          echo "::add-mask::$secret"
+          echo "COSCIENTIST_MCP_SHARED_SECRET=$secret" >> "$GITHUB_ENV"
+      - name: Set up backend
+        timeout-minutes: 15
+        # Standard local-action syntax is required by actionlint 1.7.12.
+        uses: ./.github/actions/setup-backend # zizmor: ignore[self-repository]
+      - name: Validate explicit provider configuration
+        timeout-minutes: 1
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          python - <<'PYCODE'
+          import os
+          from evaluations.benchmark_paid import configure
+          from evaluations._live_config import configure_live_environment
+          model = os.environ["MODEL_NAME"]
+          if model.startswith("openrouter/"):
+              configure_live_environment()
+          else:
+              configure(model.partition("/")[0], model)
+          PYCODE
+      - name: Install benchmarked engine
+        timeout-minutes: 5
+        run: uv pip install --system -e "$BENCHMARK_SOURCE/engine[dev]"
+      - name: Install MCP server
+        timeout-minutes: 10
+        run: |
+          python -m venv .venv-mcp
+          .venv-mcp/bin/python -m pip install -q -e "$BENCHMARK_SOURCE/engine/mcp_server"
+      - name: Start MCP server
+        timeout-minutes: 3
+        # The server resolves as a directory package from engine/. The search
+        # keys go to this step only, as in production, where the api lacks them.
+        working-directory: ${{ env.BENCHMARK_SOURCE }}/engine
+        env:
+          OPENALEX_API_KEY: ${{ secrets.OPENALEX_API_KEY }}
+          TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
+        run: |
+          nohup "$GITHUB_WORKSPACE/.venv-mcp/bin/python" -m uvicorn mcp_server.server:app \
+            --host 127.0.0.1 --port 8888 > "$GITHUB_WORKSPACE/mcp.log" 2>&1 &
+          for _ in $(seq 60); do
+            curl -fsS http://127.0.0.1:8888/ >/dev/null && exit 0
+            sleep 1
+          done
+          echo 'Benchmark MCP startup failed; raw diagnostics stay on the runner.'
+          exit 1
+      - name: Run benchmark
+        # Express has taken 41 to 71 minutes and standard about 2 h 16 min.
+        timeout-minutes: ${{ inputs.tier == 'standard' && 240 || 120 }}
+        working-directory: ${{ env.BENCHMARK_SOURCE }}
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          script="$GITHUB_WORKSPACE/evaluations/benchmark_transport.py"
+          args=()
+          if [[ "$MODEL_NAME" != openrouter/* ]]; then
+            script="$GITHUB_WORKSPACE/evaluations/benchmark_paid.py"
+            args+=(--provider "${MODEL_NAME%%/*}" --model "$MODEL_NAME")
+          fi
+          python "$script" collect "${args[@]}" --live --tier "$TIER" \
+            --goal-id "$GOAL_ID" --max-calls "$MAX_CALLS" --output "$GITHUB_WORKSPACE/benchmark-artifacts"
+      - name: Check artifact credentials
+        id: artifact_safety
+        if: always()
+        timeout-minutes: 2
+        env:
+          OPENALEX_API_KEY: ${{ secrets.OPENALEX_API_KEY }}
+          TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python -m evaluations.benchmark_artifact_safety benchmark-artifacts
+      - name: Check the metric was written
+        # Claims cluster within ideas, so treat the interval as a lower bound on the spread.
+        if: always() && steps.artifact_safety.outcome == 'success'
+        timeout-minutes: 2
+        run: |
+          python - <<'PY'
+          import glob, json, os, sys
+
+          files = sorted(glob.glob("benchmark-artifacts/claim-support-live.json"))
+          if not files:
+              print("::error title=No benchmark metric::The run wrote no claim-support result.")
+              sys.exit(1)
+          report = json.load(open(files[-1]))
+          rate = report.get("unsupported_claim_rate")
+          n = report.get("claims_assessed")
+          if rate is None:
+              print(f"::error title=No benchmark metric::{files[-1]} has no unsupported_claim_rate (n={n}).")
+              sys.exit(1)
+          low, high = report["unsupported_claim_rate_ci95"]
+          line = f"unsupported_claim_rate {rate} (n={n} claims, 95% Wilson CI {low} to {high})"
+          print(line)
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as summary:
+              summary.write(f"**{line}**\n\n")
+          PY
+      - name: Report
+        if: always() && steps.artifact_safety.outcome == 'success'
+        timeout-minutes: 5
+        run: |
+          if [ -f benchmark-artifacts/baseline.md ]; then
+            cat benchmark-artifacts/baseline.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+          for f in benchmark-artifacts/claim-support-live.json; do
+            [ -e "$f" ] || continue
+            {
+              echo '```json'
+              cat "$f"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            cat "$f"
+          done
+      - name: Upload checked run databases and receipts
+        if: always() && steps.artifact_safety.outcome == 'success'
+        timeout-minutes: 10
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: benchmark-${{ inputs.tier }}-${{ inputs.label }}
+          path: benchmark-artifacts/
+          retention-days: 14
+          if-no-files-found: warn
+  compare:
+    if: inputs.operation == 'compare'
+    name: Paired quality (${{ inputs.label }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 110
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Checkout comparison harness
+        timeout-minutes: 5
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up backend
+        timeout-minutes: 15
+        uses: ./.github/actions/setup-backend # zizmor: ignore[self-repository]
+      - name: Download and validate saved runs
+        timeout-minutes: 10
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          MAIN_RUNS: ${{ inputs.main_runs }}
+          BRANCH_RUNS: ${{ inputs.branch_runs }}
+          MODEL_NAME: ${{ inputs.model }}
+        run: |
+          provider="${MODEL_NAME%%/*}"
+          if [[ "$provider" == openrouter ]]; then provider=free; fi
+          python -m evaluations.paired_artifacts --download --repository "$REPOSITORY" \
+            --main-runs "$MAIN_RUNS" --branch-runs "$BRANCH_RUNS" --provider "$provider" \
+            --output paired-artifacts
+      - name: Check input artifact credentials
+        timeout-minutes: 2
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENALEX_API_KEY: ${{ secrets.OPENALEX_API_KEY }}
+          TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python -m evaluations.benchmark_artifact_safety paired-artifacts/prepared
+      - name: Judge both blind report orders
+        # Six orders can each reach the 600-second completion deadline.
+        timeout-minutes: 65
+        env:
+          MODEL_NAME: ${{ inputs.model }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          MAX_JUDGE_CALLS: ${{ inputs.max_judge_calls }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          module=evaluations.benchmark_transport
+          args=()
+          if [[ "$MODEL_NAME" != openrouter/* ]]; then
+            module=evaluations.benchmark_paid
+            args+=(--provider "${MODEL_NAME%%/*}" --model "$MODEL_NAME")
+          fi
+          python -m "$module" compare "${args[@]}" paired-artifacts/prepared/pairs.json \
+            --live-judge --max-judge-calls "$MAX_JUDGE_CALLS" --output paired-artifacts/paired
+      - name: Check output artifact credentials
+        id: artifact_safety
+        if: always()
+        timeout-minutes: 2
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENALEX_API_KEY: ${{ secrets.OPENALEX_API_KEY }}
+          TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: >-
+          python -m evaluations.benchmark_artifact_safety paired-artifacts/prepared
+          paired-artifacts/paired.md paired-artifacts/paired.json
+      - name: Report paired quality
+        if: always() && steps.artifact_safety.outcome == 'success'
+        timeout-minutes: 2
+        run: |
+          if [ -f paired-artifacts/paired.md ]; then
+            cat paired-artifacts/paired.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'Paired check incomplete; no quality conclusion is available.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Upload paired table, judgments and receipts
+        if: always() && steps.artifact_safety.outcome == 'success'
+        timeout-minutes: 10
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: paired-quality-${{ inputs.label }}
+          path: |
+            paired-artifacts/prepared/
+            paired-artifacts/paired.md
+            paired-artifacts/paired.json
+          retention-days: 14
+          if-no-files-found: warn
+  launch-report:
+    if: inputs.operation == 'launch-report'
+    name: Two-goal quality report (${{ inputs.label }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Checkout report harness
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up backend
+        uses: ./.github/actions/setup-backend # zizmor: ignore[self-repository]
+      - name: Validate, guard and judge the two goal pairs
+        timeout-minutes: 60
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MAIN_RUNS: ${{ inputs.main_runs }}
+          BRANCH_RUNS: ${{ inputs.branch_runs }}
+          MAX_JUDGE_CALLS: ${{ inputs.max_judge_calls }}
+          MODEL_NAME: ${{ inputs.model }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENALEX_API_KEY: ${{ secrets.OPENALEX_API_KEY }}
+          TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [[ "$MODEL_NAME" != openrouter/* || "$MAX_JUDGE_CALLS" != 4 ]]; then
+            echo 'Two-goal report requires the configured free model and a four-attempt judge reservation.'
+            exit 1
+          fi
+          python -m evaluations.launch_report --download \
+            --main-runs "$MAIN_RUNS" --branch-runs "$BRANCH_RUNS" \
+            --live-judge --output launch-artifacts/quality
+      - name: Check final report credentials
+        id: report_safety
+        if: always()
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENALEX_API_KEY: ${{ secrets.OPENALEX_API_KEY }}
+          TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          test -f launch-artifacts/quality.md
+          test -f launch-artifacts/quality.json
+          python -m evaluations.benchmark_artifact_safety \
+            launch-artifacts/quality.md launch-artifacts/quality.json
+      - name: Report paired quality
+        if: always() && steps.report_safety.outcome == 'success'
+        run: cat launch-artifacts/quality.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload checked report only
+        if: always() && steps.report_safety.outcome == 'success'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: launch-quality-${{ inputs.label }}
+          path: |
+            launch-artifacts/quality.md
+            launch-artifacts/quality.json
+          retention-days: 14
+          if-no-files-found: error

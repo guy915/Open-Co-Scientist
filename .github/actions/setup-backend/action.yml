@@ -1,0 +1,21 @@
+# Backend jobs share this recipe so the editable engine install cannot drift.
+name: Set up backend
+description: Install Python 3.12 and the engine package (mirrors make setup).
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+      with:
+        python-version: '3.12'
+    - name: Set up uv
+      uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      with:
+        version: '0.11.32'
+        enable-cache: false
+    - name: Install backend packages
+      shell: bash
+      # uv installs in seconds where pip took 30 s.
+      # pytest-xdist is CI-only: the app suite runs in parallel shards.
+      run: uv pip install --system -e "engine[dev]" pytest-xdist==3.8.0

@@ -1,0 +1,118 @@
+{
+  "name": "citation_usefulness_v1",
+  "description": "Does a retrieved span answer the question the search was serving? Hand-authored, biomedical, deliberately including the failure mode a topic-overlap metric cannot see: a span on the right subject that answers a different question. Labels: useful (answers the question, for or against), partial (bears on it without settling it), useless (same topic, different question, or no bearing at all).",
+  "items": [
+    {
+      "id": "cu-001",
+      "question": "Is the TGF-beta receptor expressed in adult human liver?",
+      "claim": "TGF-beta signalling is available to target in adult human liver.",
+      "span": "Immunohistochemistry of 41 adult human liver biopsies detected TGFBR2 in hepatic stellate cells in all samples.",
+      "label": "useful"
+    },
+    {
+      "id": "cu-002",
+      "question": "Is the TGF-beta receptor expressed in adult human liver?",
+      "claim": "TGF-beta signalling is available to target in adult human liver.",
+      "span": "TGF-beta receptor expression in murine embryonic liver peaks at E14.5 and declines thereafter.",
+      "label": "useless"
+    },
+    {
+      "id": "cu-003",
+      "question": "Does blocking IL-6 reduce fibrosis in humans?",
+      "claim": "IL-6 blockade is a plausible antifibrotic strategy.",
+      "span": "In a randomized trial of 212 patients, tocilizumab did not significantly change the forced vital capacity decline over 48 weeks.",
+      "label": "useful"
+    },
+    {
+      "id": "cu-004",
+      "question": "Does blocking IL-6 reduce fibrosis in humans?",
+      "claim": "IL-6 blockade is a plausible antifibrotic strategy.",
+      "span": "IL-6 is elevated in the serum of patients with systemic sclerosis relative to healthy controls.",
+      "label": "partial"
+    },
+    {
+      "id": "cu-005",
+      "question": "Does blocking IL-6 reduce fibrosis in humans?",
+      "claim": "IL-6 blockade is a plausible antifibrotic strategy.",
+      "span": "Tocilizumab is approved for rheumatoid arthritis at a dose of 8 mg/kg every four weeks.",
+      "label": "useless"
+    },
+    {
+      "id": "cu-006",
+      "question": "What is the reported half-life of the compound in humans?",
+      "claim": "The compound can be dosed once daily.",
+      "span": "Mean terminal half-life after a single 40 mg oral dose in 18 healthy volunteers was 21.4 hours.",
+      "label": "useful"
+    },
+    {
+      "id": "cu-007",
+      "question": "What is the reported half-life of the compound in humans?",
+      "claim": "The compound can be dosed once daily.",
+      "span": "The compound showed a half-life of 2.1 hours in Sprague-Dawley rats.",
+      "label": "partial"
+    },
+    {
+      "id": "cu-008",
+      "question": "Has senolytic therapy been tested in patients with idiopathic pulmonary fibrosis?",
+      "claim": "Senolytics are ready for a fibrosis trial.",
+      "span": "An open-label pilot of dasatinib plus quercetin in 14 patients with idiopathic pulmonary fibrosis improved six-minute walk distance.",
+      "label": "useful"
+    },
+    {
+      "id": "cu-009",
+      "question": "Has senolytic therapy been tested in patients with idiopathic pulmonary fibrosis?",
+      "claim": "Senolytics are ready for a fibrosis trial.",
+      "span": "Senescent cell burden increases with age across most human tissues.",
+      "label": "useless"
+    },
+    {
+      "id": "cu-010",
+      "question": "Does the mechanism require a cofactor the cell does not supply?",
+      "claim": "The proposed enzymatic step proceeds in vivo.",
+      "span": "The reaction required exogenous NADPH; no activity was detected in cofactor-free lysate.",
+      "label": "useful"
+    },
+    {
+      "id": "cu-011",
+      "question": "Does the mechanism require a cofactor the cell does not supply?",
+      "claim": "The proposed enzymatic step proceeds in vivo.",
+      "span": "Cytosolic NADPH concentrations in cultured hepatocytes range from 30 to 60 micromolar.",
+      "label": "partial"
+    },
+    {
+      "id": "cu-012",
+      "question": "Does the mechanism require a cofactor the cell does not supply?",
+      "claim": "The proposed enzymatic step proceeds in vivo.",
+      "span": "The crystal structure was solved to 1.9 angstrom resolution.",
+      "label": "useless"
+    },
+    {
+      "id": "cu-013",
+      "question": "Is there any human genetic evidence linking the gene to the disease?",
+      "claim": "The gene is a causal driver of the disease.",
+      "span": "A genome-wide association study of 12,400 cases identified a lead variant at this locus with odds ratio 1.31.",
+      "label": "useful"
+    },
+    {
+      "id": "cu-014",
+      "question": "Is there any human genetic evidence linking the gene to the disease?",
+      "claim": "The gene is a causal driver of the disease.",
+      "span": "Knockout mice show a comparable phenotype to the human disease.",
+      "label": "useless"
+    },
+    {
+      "id": "cu-015",
+      "question": "Has anyone reported that the effect fails to replicate?",
+      "claim": "The effect is established.",
+      "span": "Three independent laboratories reported the original finding, and a fourth failed to reproduce it under matched conditions.",
+      "label": "useful"
+    },
+    {
+      "id": "cu-016",
+      "question": "Has anyone reported that the effect fails to replicate?",
+      "claim": "The effect is established.",
+      "span": "The original report has been cited 1,240 times.",
+      "label": "useless"
+    }
+  ]
+}

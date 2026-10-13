@@ -1,0 +1,17 @@
+name: Nightly
+
+on:
+  schedule:
+    # Off-hour cron avoids GitHub delays or dropped jobs during peak scheduling.
+    - cron: '17 6 * * *'
+  workflow_dispatch:
+
+# Called workflows cannot exceed caller permissions; CI needs pull-requests: read.
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  full-suite:
+    # actionlint 1.7.12 rejects the newer $/ syntax; the local call uses this commit.
+    uses: ./.github/workflows/ci.yml # zizmor: ignore[self-repository]

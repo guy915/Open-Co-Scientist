@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" sizes="any" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="canonical" href="https://open-coscientist.com" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Open Co-Scientist</title>
+    <meta name="description" content="Generate, evaluate, and rank research hypotheses with a team of agents." />
+    <meta name="keywords" content="Co-Scientist, multi-agent AI, research hypotheses, hypothesis ranking" />
+    <meta name="robots" content="index, follow" />
+    <meta name="googlebot" content="index, follow" />
+    <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#131314" media="(prefers-color-scheme: dark)" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Open Co-Scientist" />
+    <meta property="og:description" content="Generate, evaluate, and rank research hypotheses with a team of agents." />
+    <meta property="og:site_name" content="Open Co-Scientist" />
+    <meta property="og:url" content="https://open-coscientist.com" />
+    <meta property="og:image" content="https://open-coscientist.com/social-card.jpg" />
+    <meta property="og:image:secure_url" content="https://open-coscientist.com/social-card.jpg" />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Open Co-Scientist" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Open Co-Scientist" />
+    <meta name="twitter:description" content="Generate, evaluate, and rank research hypotheses with a team of agents." />
+    <meta name="twitter:image" content="https://open-coscientist.com/social-card.jpg" />
+    <meta name="twitter:image:alt" content="Open Co-Scientist" />
+    <script>
+      (function () {
+        var root = document.documentElement;
+        var mode = null;
+        try {
+          mode = localStorage.getItem('cosci-theme');
+        } catch (error) {}
+        var dark =
+          mode === 'dark' ||
+          (mode !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
+        root.dataset.theme = dark ? 'dark' : 'light';
+        var path = location.pathname;
+        root.dataset.boot = /^\/(runs(\/new)?\/?)?$/.test(path)
+          ? 'home'
+          : /^\/(chats|examples)\/[^/]/.test(path)
+            ? 'chat'
+            : /^\/runs\/[^/]/.test(path)
+              ? 'report'
+              : 'page';
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root">
+      <div class="boot" aria-busy="true">
+        <p class="boot-status" role="status">Loading Co-Scientist…</p>
+        <div class="boot-rail">
+          <div class="boot-rail-group">
+            <span class="ui-skeleton boot-icon"></span>
+            <span class="ui-skeleton boot-icon"></span>
+          </div>
+          <span class="ui-skeleton boot-icon"></span>
+        </div>
+        <div class="boot-workspace">
+          <div class="boot-header">
+            <span class="ui-skeleton boot-icon boot-menu"></span>
+            <div class="boot-brand">
+              <span class="ui-skeleton boot-logo"></span>
+              <span class="ui-skeleton boot-line boot-wordmark"></span>
+            </div>
+            <span class="ui-skeleton boot-line boot-action"></span>
+          </div>
+          <div class="boot-page">
+            <div class="boot-view boot-home">
+              <div class="boot-home-main">
+                <span class="ui-skeleton boot-logo-mark"></span>
+                <div class="boot-greeting">
+                  <span class="ui-skeleton boot-line"></span>
+                  <span class="ui-skeleton boot-line"></span>
+                </div>
+                <div class="boot-steps">
+                  <div class="boot-step">
+                    <span class="ui-skeleton boot-step-number"></span>
+                    <div class="boot-step-lines">
+                      <span class="ui-skeleton boot-line"></span>
+                      <span class="ui-skeleton boot-line"></span>
+                      <span class="ui-skeleton boot-line"></span>
+                      <span class="ui-skeleton boot-line"></span>
+                    </div>
+                  </div>
+                  <div class="boot-step">
+                    <span class="ui-skeleton boot-step-number"></span>
+                    <div class="boot-step-lines">
+                      <span class="ui-skeleton boot-line"></span>
+                      <span class="ui-skeleton boot-line"></span>
+                      <span class="ui-skeleton boot-line"></span>
+                      <span class="ui-skeleton boot-line"></span>
+                    </div>
+                  </div>
+                  <div class="boot-step">
+                    <span class="ui-skeleton boot-step-number"></span>
+                    <div class="boot-step-lines">
+                      <span class="ui-skeleton boot-line"></span>
+                      <span class="ui-skeleton boot-line"></span>
+                      <span class="ui-skeleton boot-line"></span>
+                      <span class="ui-skeleton boot-line"></span>
+                    </div>
+                  </div>
+                </div>
+                <div class="boot-suggestions">
+                  <div class="boot-suggestion">
+                    <span class="ui-skeleton boot-suggestion-icon"></span>
+                    <span class="ui-skeleton boot-line"></span>
+                    <span class="ui-skeleton boot-line"></span>
+                  </div>
+                  <div class="boot-suggestion">
+                    <span class="ui-skeleton boot-suggestion-icon"></span>
+                    <span class="ui-skeleton boot-line"></span>
+                    <span class="ui-skeleton boot-line"></span>
+                  </div>
+                  <div class="boot-suggestion">
+                    <span class="ui-skeleton boot-suggestion-icon"></span>
+                    <span class="ui-skeleton boot-line"></span>
+                    <span class="ui-skeleton boot-line"></span>
+                  </div>
+                </div>
+                <div class="boot-composer">
+                  <span class="ui-skeleton boot-line"></span>
+                  <div class="boot-composer-tools">
+                    <span class="ui-skeleton boot-icon"></span>
+                    <span class="ui-skeleton boot-icon"></span>
+                    <span class="ui-skeleton boot-icon"></span>
+                  </div>
+                </div>
+                <div class="boot-scroll-hint"></div>
+              </div>
+              <div class="boot-recents">
+                <div class="boot-recents-heading">
+                  <span class="ui-skeleton boot-icon"></span>
+                  <span class="ui-skeleton boot-line"></span>
+                </div>
+                <div class="boot-recents-list">
+                  <div class="boot-recent">
+                    <div class="boot-recent-chips">
+                      <span class="ui-skeleton boot-line"></span>
+                      <span class="ui-skeleton boot-line"></span>
+                    </div>
+                    <div class="boot-recent-title">
+                      <span class="ui-skeleton boot-line"></span>
+                      <span class="ui-skeleton boot-line"></span>
+                    </div>
+                    <div class="boot-recent-text">
+                      <span class="ui-skeleton boot-line"></span>
+                      <span class="ui-skeleton boot-line"></span>
+                      <span class="ui-skeleton boot-line"></span>
+                    </div>
+                    <div class="boot-recent-chips">
+                      <span class="ui-skeleton boot-line"></span>
+                      <span class="ui-skeleton boot-line"></span>
+                    </div>
+                    <div class="boot-recent-text">
+                      <span class="ui-skeleton boot-line"></span>
+                      <span class="ui-skeleton boot-line"></span>
+                      <span class="ui-skeleton boot-line"></span>
+                      <span class="ui-skeleton boot-line"></span>
+                    </div>
+                  </div>
+                  <div class="boot-recent">
+                    <div class="boot-recent-chips">
+                      <span class="ui-skeleton boot-line"></span>
+                      <span class="ui-skeleton boot-line"></span>
+                    </div>
+                    <div class="boot-recent-title">
+                      <span class="ui-skeleton boot-line"></span>
+                      <span class="ui-skeleton boot-line"></span>
+                    </div>
+                    <div class="boot-recent-text">
+                      <span class="ui-skeleton boot-line"></span>
+                      <span class="ui-skeleton boot-line"></span>
+                      <span class="ui-skeleton boot-line"></span>
+                    </div>
+                    <div class="boot-recent-chips">
+                      <span class="ui-skeleton boot-line"></span>
+                      <span class="ui-skeleton boot-line"></span>
+                    </div>
+                    <div class="boot-recent-text">
+                      <span class="ui-skeleton boot-line"></span>
+                      <span class="ui-skeleton boot-line"></span>
+                      <span class="ui-skeleton boot-line"></span>
+                      <span class="ui-skeleton boot-line"></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="boot-view boot-chat">
+              <div class="boot-thread">
+                <div class="boot-bubble">
+                  <span class="ui-skeleton boot-line"></span>
+                  <span class="ui-skeleton boot-line"></span>
+                </div>
+                <div class="boot-reply">
+                  <span class="ui-skeleton boot-line"></span>
+                  <span class="ui-skeleton boot-line"></span>
+                  <span class="ui-skeleton boot-line"></span>
+                  <span class="ui-skeleton boot-line"></span>
+                </div>
+                <div class="boot-reply">
+                  <span class="ui-skeleton boot-line"></span>
+                  <span class="ui-skeleton boot-line"></span>
+                  <span class="ui-skeleton boot-line"></span>
+                  <span class="ui-skeleton boot-line"></span>
+                </div>
+                <div class="boot-bubble">
+                  <span class="ui-skeleton boot-line"></span>
+                </div>
+              </div>
+              <div class="boot-composer">
+                <span class="ui-skeleton boot-line"></span>
+                <div class="boot-composer-tools">
+                  <span class="ui-skeleton boot-icon"></span>
+                  <span class="ui-skeleton boot-icon"></span>
+                  <span class="ui-skeleton boot-icon"></span>
+                </div>
+              </div>
+            </div>
+            <div class="boot-view boot-report">
+              <div class="boot-report-titlebar">
+                <span class="ui-skeleton boot-icon"></span>
+                <span class="ui-skeleton boot-line"></span>
+              </div>
+              <div class="boot-article">
+                <span class="ui-skeleton boot-line boot-heading"></span>
+                <div class="boot-paragraph">
+                  <span class="ui-skeleton boot-line"></span>
+                  <span class="ui-skeleton boot-line"></span>
+                  <span class="ui-skeleton boot-line"></span>
+                  <span class="ui-skeleton boot-line"></span>
+                </div>
+                <span class="ui-skeleton boot-line boot-subheading"></span>
+                <div class="boot-paragraph">
+                  <span class="ui-skeleton boot-line"></span>
+                  <span class="ui-skeleton boot-line"></span>
+                  <span class="ui-skeleton boot-line"></span>
+                </div>
+              </div>
+            </div>
+            <div class="boot-view boot-document">
+              <div class="boot-article">
+                <span class="ui-skeleton boot-line boot-heading"></span>
+                <div class="boot-paragraph">
+                  <span class="ui-skeleton boot-line"></span>
+                  <span class="ui-skeleton boot-line"></span>
+                  <span class="ui-skeleton boot-line"></span>
+                  <span class="ui-skeleton boot-line"></span>
+                </div>
+                <span class="ui-skeleton boot-line boot-subheading"></span>
+                <div class="boot-paragraph">
+                  <span class="ui-skeleton boot-line"></span>
+                  <span class="ui-skeleton boot-line"></span>
+                  <span class="ui-skeleton boot-line"></span>
+                  <span class="ui-skeleton boot-line"></span>
+                </div>
+                <span class="ui-skeleton boot-line boot-subheading"></span>
+                <div class="boot-paragraph">
+                  <span class="ui-skeleton boot-line"></span>
+                  <span class="ui-skeleton boot-line"></span>
+                  <span class="ui-skeleton boot-line"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <noscript>
+      <main>
+        <h1>Create a multi-agent research session.</h1>
+        <p>Generate, evaluate, and rank hypotheses with agent collaboration.</p>
+        <p>
+          Co-Scientist is a workspace for drafting requirements, generating
+          hypotheses, reviewing candidates, ranking matches, and synthesizing results.
+        </p>
+      </main>
+    </noscript>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

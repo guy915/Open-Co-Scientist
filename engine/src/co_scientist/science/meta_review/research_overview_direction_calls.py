@@ -11,6 +11,7 @@ from co_scientist.core.constants import (
     RESEARCH_OVERVIEW_DIRECTION_MAX_TOKENS,
 )
 from co_scientist.core.exceptions import TASK_CONTROL_FLOW_ERRORS
+from co_scientist.domains.report.content import _normalize_research_directions
 from co_scientist.domains.research_state.state import WorkflowState
 from co_scientist.platform.llm import (
     CompletionSpec,
@@ -75,6 +76,7 @@ def _validate_research_direction(raw: Any) -> Any:
 def _validate_research_directions(raw_directions: Any) -> Any:
     """json_object ignores maxItems; enforce caps rather than trusting an
     oversized response already at the budget escalation ceiling."""
+    raw_directions = _normalize_research_directions(raw_directions)
     if not isinstance(raw_directions, list):
         return raw_directions
     sliced = raw_directions[:RESEARCH_OVERVIEW_MAX_DIRECTIONS]
@@ -82,8 +84,7 @@ def _validate_research_directions(raw_directions: Any) -> Any:
 
 
 def format_overview(raw_overview: Any) -> Any:
-    """Touch direction fields only when present; preserve missing/malformed
-    overview and all established pass-through fields."""
+    """Normalize null direction lists and preserve other established fields."""
     has_directions = isinstance(raw_overview, dict) and "research_directions" in raw_overview
     if not has_directions:
         return raw_overview

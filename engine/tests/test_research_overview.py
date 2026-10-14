@@ -200,6 +200,12 @@ def _state(**overrides: Any) -> Any:
     )
 
 
+def test_format_overview_normalizes_null_research_directions() -> None:
+    assert calls.format_overview(
+        {"summary": "Keep this synthesis.", "research_directions": None}
+    ) == {"summary": "Keep this synthesis.", "research_directions": []}
+
+
 async def test_a_periodic_firing_writes_only_a_lean_interim_overview(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

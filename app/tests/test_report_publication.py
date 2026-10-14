@@ -68,6 +68,43 @@ def _decisions(run_id: str, stage: str, db_path: str) -> list[dict[str, Any]]:
     ]
 
 
+def test_completed_legacy_report_normalizes_null_research_directions(
+    isolated_db: str,
+) -> None:
+    owner = make_client()
+    created = _create_run(owner, "Study a legacy research overview", headers=_OWNER)
+    assert created.status_code == 200, created.text
+    run_id = str(created.json()["id"])
+    runs.update_run_status(run_id, RunStatus.COMPLETED, db_path=isolated_db)
+    reports.save_report(
+        run_id,
+        {
+            "research_overview": {
+                "overview": {
+                    "summary": "Preserve this synthesized research summary.",
+                    "research_directions": None,
+                },
+                "nih_specific_aims": {"impact": "Preserve this scientific content."},
+            }
+        },
+        "## Research Overview\n",
+        db_path=isolated_db,
+    )
+
+    response = owner.get(f"/api/runs/{run_id}/report", headers=_OWNER)
+
+    assert response.status_code == 200, response.text
+    overview = response.json()["payload"]["research_overview"]
+    assert overview["overview"] == {
+        "summary": "Preserve this synthesized research summary.",
+        "research_directions": [],
+    }
+    assert overview["nih_specific_aims"] == {"impact": "Preserve this scientific content."}
+    stored = reports.get_latest_report(run_id, db_path=isolated_db)
+    assert stored is not None
+    assert stored["payload"]["research_overview"]["overview"]["research_directions"] is None
+
+
 def _hypothesis(identifier: str, status: str) -> dict[str, object]:
     return {
         "id": identifier,

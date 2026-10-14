@@ -138,7 +138,8 @@ function replaceRoot(html, content) {
   const root = /(<div id="root">)[\s\S]*?(<\/div>\s*<noscript>)/;
   const result = html.replace(
     root,
-    (_match, opening, closing) => `${opening}${content}${closing}`,
+    (_match, opening, closing) =>
+      `${opening}${content.replace('<main>', '<main class="public-prerender">')}${closing}`,
   );
   if (result === html)
     throw new Error('Could not locate the #root prerender boundary.');
@@ -200,7 +201,17 @@ function renderRoute(route) {
       `<script type="application/ld+json">${jsonLd}</script></head>`,
     );
   }
-  return replaceRoot(html, route.content);
+  if (route.content !== undefined) return replaceRoot(html, route.content);
+  if (route.noscript !== undefined) {
+    if (!/<noscript>[\s\S]*?<\/noscript>/.test(html)) {
+      throw new Error('Could not locate the noscript boundary.');
+    }
+    return html.replace(
+      /<noscript>[\s\S]*?<\/noscript>/,
+      `<noscript>${route.noscript}</noscript>`,
+    );
+  }
+  return html;
 }
 
 function xmlUrl(route) {
@@ -331,8 +342,7 @@ const privateHtml = renderRoute({
   title: 'Private workspace - Open Co-Scientist',
   description: 'Private workspace pages are not indexed.',
   robots: 'noindex, nofollow',
-  content:
-    '<main><h1>Private workspace</h1><p>Continue in the same browser that owns this chat or run.</p><p><a href="/">Open the research workspace</a></p></main>',
+  noscript: '<main><p>Private workspace pages are not indexed.</p></main>',
 });
 await writeFile(path.join(dist, 'private.html'), privateHtml);
 

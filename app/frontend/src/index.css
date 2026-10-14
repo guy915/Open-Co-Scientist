@@ -414,6 +414,14 @@ body {
   margin: 0;
 }
 
+.public-prerender {
+  color: var(--cosci-text);
+}
+
+.public-prerender a {
+  color: var(--cosci-blue);
+}
+
 /* Do not add global margins/list resets or preflight: unclassed Goal Report
    paragraphs/lists depend on browser spacing and markers. */
 @layer base {

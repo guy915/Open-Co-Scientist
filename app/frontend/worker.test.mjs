@@ -244,8 +244,8 @@ test('build prerenders the public fixture projection and discovery files', async
 <meta property="og:url" content="https://open-coscientist.com" />
 <meta name="twitter:title" content="Open Co-Scientist" />
 <meta name="twitter:description" content="Original description" />
-</head><body><div id="root"><p>Loading</p></div>
-<noscript><main>Old copy</main></noscript></body></html>`;
+</head><body><div id="root"><div class="boot"><div class="boot-view boot-home">Home skeleton</div><div class="boot-view boot-chat">Chat skeleton</div></div></div>
+<noscript><main>Old copy</main></noscript><link rel="stylesheet" href="/assets/app.css" /><script type="module" src="/assets/app.js"></script></body></html>`;
   writeFileSync(path.join(dist, 'index.html'), baseHtml);
 
   const result = spawnSync(process.execPath, [prerenderScript], {
@@ -418,6 +418,22 @@ test('build prerenders the public fixture projection and discovery files', async
   const privatePage = readFileSync(path.join(dist, 'private.html'), 'utf8');
   assert.match(privatePage, /name="robots" content="noindex, nofollow"/);
   assert.doesNotMatch(privatePage, /rel="canonical"/);
+  assert.doesNotMatch(privatePage, /property="og:url"/);
+  const bootMarkup = html =>
+    html.match(/<div id="root">[\s\S]*?<\/div>\s*<noscript>/)?.[0];
+  assert.equal(bootMarkup(privatePage), bootMarkup(baseHtml));
+  assert.match(privatePage, /class="boot"/);
+  assert.match(privatePage, /class="boot-view boot-home"/);
+  assert.match(privatePage, /class="boot-view boot-chat"/);
+  const assetReferences = html =>
+    [...html.matchAll(/(?:src|href)="(\/assets\/[^\"]+)"/g)].map(
+      match => match[1],
+    );
+  assert.deepEqual(assetReferences(privatePage), assetReferences(baseHtml));
+  assert.match(
+    privatePage,
+    /<noscript><main><p>Private workspace pages are not indexed\.<\/p><\/main><\/noscript>/,
+  );
   assert.match(
     readFileSync(path.join(dist, '404.html'), 'utf8'),
     /name="robots" content="noindex, nofollow"/,

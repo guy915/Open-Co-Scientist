@@ -8,6 +8,7 @@ from typing import Any
 
 from co_scientist.domains.chat.seed import _read_snapshot
 from co_scientist.domains.report import repository as reports
+from co_scientist.domains.report.content import _normalize_research_directions
 from co_scientist.platform.db import use_conn
 from co_scientist.platform.db.models import DEMO_CLIENT_ID
 
@@ -68,6 +69,17 @@ def get_display_report(
 ) -> dict[str, Any] | None:
     with use_conn(conn, None) as active:
         report = reports.get_latest_report(run_id, conn=active)
+        if report:
+            overview = report["payload"].get("research_overview")
+            summary = overview.get("overview") if isinstance(overview, dict) else None
+            if (
+                isinstance(summary, dict)
+                and "research_directions" in summary
+                and summary["research_directions"] is None
+            ):
+                summary["research_directions"] = _normalize_research_directions(
+                    summary["research_directions"]
+                )
         return project_example_summaries(report, active) if report else None
 
 

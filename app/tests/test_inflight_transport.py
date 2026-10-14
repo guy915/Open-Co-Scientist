@@ -11,6 +11,7 @@ from co_scientist.core import inflight
 from co_scientist.core.async_bridge import run_coroutine_sync, run_off_loop
 from co_scientist.core.exceptions import LLMTimeoutError
 from co_scientist.platform.llm import complete_request, offline_guard
+from co_scientist.platform.llm.request import transport
 from litellm.exceptions import APIConnectionError, RateLimitError
 
 from tests._llm_fake_backend import install_completion_backend
@@ -93,6 +94,62 @@ async def test_a_timed_out_call_keeps_its_mark(monkeypatch: pytest.MonkeyPatch) 
     assert "timed-out" in _unanswered()
 
 
+async def test_a_verified_zero_cost_timeout_releases_its_mark(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def provider(**kwargs: Any) -> Any:
+        await asyncio.sleep(3600)
+
+    async def admit_zero_cost(args: dict[str, Any], *, byok: bool = False) -> bool:
+        return True
+
+    _install(monkeypatch, provider)
+    monkeypatch.setattr(transport, "enforce_free_request", admit_zero_cost)
+    with pytest.raises(LLMTimeoutError) as failure:
+        await _call("free-timeout", t=0.01)
+
+    assert failure.value.zero_cost_admitted is True
+    assert "free-timeout" not in _unanswered()
+
+
+async def test_a_verified_zero_cost_connection_failure_releases_its_mark(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def provider(**kwargs: Any) -> Any:
+        raise APIConnectionError("connection reset", llm_provider="openai", model=_MODEL)
+
+    async def admit_zero_cost(args: dict[str, Any], *, byok: bool = False) -> bool:
+        return True
+
+    _install(monkeypatch, provider)
+    monkeypatch.setattr(transport, "enforce_free_request", admit_zero_cost)
+    with pytest.raises(APIConnectionError):
+        await _call("free-connection-failure")
+
+    assert "free-connection-failure" not in _unanswered()
+
+
+async def test_a_byok_timeout_keeps_its_mark_even_if_free_admission_is_enabled(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def provider(**kwargs: Any) -> Any:
+        await asyncio.sleep(3600)
+
+    async def admit_zero_cost(args: dict[str, Any], *, byok: bool = False) -> bool:
+        return True
+
+    _install(monkeypatch, provider)
+    monkeypatch.setattr(transport, "enforce_free_request", admit_zero_cost)
+    with (
+        inflight.task_scope("byok-free-timeout"),
+        pytest.raises(LLMTimeoutError) as failure,
+    ):
+        await complete_request({"model": _MODEL}, _MODEL, byok=True, timeout_seconds=0.01)
+
+    assert failure.value.zero_cost_admitted is False
+    assert "byok-free-timeout" in _unanswered()
+
+
 async def _chunks() -> AsyncIterator[Any]:
     yield SimpleNamespace(choices=[], model=_MODEL, usage=None)
     yield SimpleNamespace(choices=[], model=_MODEL, usage=None)
@@ -115,6 +172,24 @@ async def test_a_finished_stream_clears_and_an_abandoned_stream_keeps_its_mark(
     unanswered = _unanswered()
     assert "finished-stream" not in unanswered
     assert "abandoned-stream" in unanswered
+
+
+async def test_a_verified_zero_cost_abandoned_stream_releases_its_mark(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def provider(**kwargs: Any) -> Any:
+        return _chunks()
+
+    async def admit_zero_cost(args: dict[str, Any], *, byok: bool = False) -> bool:
+        return True
+
+    _install(monkeypatch, provider)
+    monkeypatch.setattr(transport, "enforce_free_request", admit_zero_cost)
+    stream = await _call("free-abandoned-stream", stream=True)
+    await stream.__anext__()
+    await stream.aclose()
+
+    assert "free-abandoned-stream" not in _unanswered()
 
 
 async def test_a_call_inside_an_off_loop_wave_is_attributed_to_its_task(

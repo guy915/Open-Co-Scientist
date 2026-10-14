@@ -18,6 +18,11 @@ from co_scientist.domains.safety.hypothesis.safety import is_blocking_status
 logger = logging.getLogger(__name__)
 
 
+def _normalize_research_directions(value: Any) -> Any:
+    """Treat legacy null values as an empty list while preserving other shapes."""
+    return [] if value is None else value
+
+
 def _claim_evidence_ids(edge: ClaimEdge, span_key: str = "supporting") -> list[str]:
     """Provenance lives on spans, not edges; map chunk passage ids to parent
     article ids for reader references.

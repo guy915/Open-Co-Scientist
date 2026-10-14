@@ -78,10 +78,12 @@ class _CompletionStream:
         receipt: ProviderReservation | None,
         call: inflight.CallMark,
         byok: bool,
+        zero_cost_admitted: bool = False,
     ) -> None:
         self._response = response
         self._call = call
         self._byok = byok
+        self._zero_cost_admitted = zero_cost_admitted
         self._iterator = response.__aiter__()
         self._model = model
         self._start = start
@@ -128,7 +130,7 @@ class _CompletionStream:
             try:
                 settle_physical(self._receipt, self._last, refused=self._refused)
             except BaseException as settlement_error:
-                _note_answer(self._call, error)
+                _account_call(self._call, error)
                 self._context.run(
                     record_completion_failure,
                     self._model,
@@ -146,7 +148,7 @@ class _CompletionStream:
                 record_completion_failure, self._model, error, latency, refused=self._refused
             )
         end_request_span(self._span, self._last, error, refused=self._refused)
-        _note_answer(self._call, error)
+        _account_call(self._call, error, zero_cost_admitted=self._zero_cost_admitted)
 
     async def aclose(self) -> None:
         self._finish(asyncio.CancelledError())
@@ -155,11 +157,18 @@ class _CompletionStream:
             await close()
 
 
-# Only an HTTP status the provider returned proves the request was answered;
-# connection loss, timeouts and cancellation leave its outcome unknown.
-def _note_answer(call: inflight.CallMark, error: BaseException | None) -> None:
+# A provider status proves an answer; verified free failures release the
+# accounting mark without being classified as answered.
+def _account_call(
+    call: inflight.CallMark,
+    error: BaseException | None,
+    *,
+    zero_cost_admitted: bool = False,
+) -> None:
     if error is None or isinstance(error, APIStatusError):
         call.answered()
+    elif zero_cost_admitted:
+        call.release_proven_zero_cost()
 
 
 async def _await_provider(
@@ -348,11 +357,12 @@ async def _complete_physical(
             "provider outcome may be unknown",
             zero_cost_admitted=zero_cost and not byok,
         )
+        _account_call(call, error, zero_cost_admitted=error.zero_cost_admitted)
         record_completion_failure(model_name, error, time.monotonic() - start)
         end_request_span(span, None, error)
         raise error from exc
     except BaseException as exc:
-        _note_answer(call, exc)
+        _account_call(call, exc, zero_cost_admitted=zero_cost and not byok)
         record_completion_failure(model_name, exc, time.monotonic() - start)
         end_request_span(span, None, exc)
         if receipt is not None and receipt.credit and is_credit_error(exc):
@@ -367,7 +377,9 @@ async def _complete_physical(
             ) from exc
         raise
     if completion_args.get("stream"):
-        return _CompletionStream(response, model_name, start, span, receipt, call, byok)
+        return _CompletionStream(
+            response, model_name, start, span, receipt, call, byok, zero_cost and not byok
+        )
     try:
         settle_physical(receipt, response, refused=is_model_refusal(response))
     except BaseException as settlement_error:

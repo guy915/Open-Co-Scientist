@@ -10,6 +10,7 @@ export {DIALOG_TITLE_CLASSES, Dialog} from './dialog';
 export {IconButton} from './icon_button';
 export {Menu, MenuItem} from './menu';
 export {NavItemButton, NavItemLink} from './nav_item';
+export {NotFoundPage} from './not_found_page';
 export {Select} from './select';
 export {DocumentSkeleton} from './skeleton';
 export {SectionNav, SegmentedControl, TabNav, TabNavLink} from './tabs';

@@ -66,6 +66,12 @@ it('opens on the FAQ when the address asks for it', () => {
   );
 });
 
+it('links the landing navigation to the privacy notice', () => {
+  const {container} = renderLanding();
+
+  expect(container.querySelector('a[href="/privacy"]')).not.toBeNull();
+});
+
 it('moves the landing tabs into the page header when it has room', () => {
   const {slot, pane, paneScrollTo} = renderInHeaderPane();
 

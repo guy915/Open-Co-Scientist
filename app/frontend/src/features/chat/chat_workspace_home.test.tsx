@@ -40,7 +40,7 @@ describe('chat workspace home', () => {
       screen.getByRole('link', {
         name: /ferroptosis in pancreatic cancer cells/i,
       }),
-    ).toHaveAttribute('href', '/runs/demo-ferroptosis/details');
+    ).toHaveAttribute('href', '/examples/demo-ferroptosis');
   });
 });
 
@@ -73,5 +73,8 @@ describe('chat workspace home completed cards', () => {
     expect(
       screen.getByText('Biofilm redox-state vulnerability hypothesis'),
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', {name: /Rank host-pathogen target hypotheses/}),
+    ).toHaveAttribute('href', '/runs/run-real-titles/details');
   });
 });

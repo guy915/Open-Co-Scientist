@@ -136,9 +136,10 @@ runtime): `VITE_API_BASE_URL=https://api.open-coscientist.com`, and
 frontend host; everything there is compiled into public assets.
 
 - **Cloudflare** (`wrangler.jsonc`): a Worker (`app/frontend/worker.mjs`)
-  serves the `dist` assets and answers any missing path outside `/assets/`
-  with `/index.html`, so deep links load the app while a missing hashed asset
-  stays a 404 instead of returning HTML. `app/frontend/public/_headers` sets
+  serves prerendered home, privacy and curated example pages at their clean
+  URLs. Chat, run and operations deep links use a private shell with
+  `noindex` metadata and headers; unknown pages and missing assets return 404.
+  `app/frontend/public/_headers` sets
   the headers below. CI checks the config and runs `worker.test.mjs`.
 - Headers: `/assets/*` is cached for a year and immutable; every path sends
   `X-Content-Type-Options: nosniff`,

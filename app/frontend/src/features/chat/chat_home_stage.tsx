@@ -12,6 +12,7 @@ import {Link} from 'react-router-dom';
 import {firstSentenceClause, capitalizeTerm} from '@/shared/lib/text';
 import {useNowTick} from '@/shared/hooks/timers';
 import {resultsPath} from '@/shared/hooks/session_side';
+import {examplePath} from '@/shared/lib/routes';
 import {displayTitle} from '@/shared/lib/titles';
 import {formatDate, formatDurationPhrase} from '@/shared/lib/time';
 
@@ -525,7 +526,7 @@ function RecentRunCard({run}: {run: Run}) {
   return (
     <li>
       <Link
-        to={resultsPath(run.id)}
+        to={run.is_demo ? examplePath(run.id) : resultsPath(run.id)}
         className={joinClasses(RECENT_CARD_CLASSES, active && 'is-active-run')}
         // The labels below are cut to fit; assistive tech still gets the goal.
         aria-description={run.research_goal}

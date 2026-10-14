@@ -14,5 +14,25 @@ describe('no index', () => {
         expect(robots).toHaveAttribute('content', 'noindex, nofollow');
       });
     });
+
+    it('removes the public canonical and social URL from private routes', async () => {
+      const canonical = document.createElement('link');
+      canonical.rel = 'canonical';
+      canonical.href = 'https://open-coscientist.com';
+      document.head.append(canonical);
+      const openGraphUrl = document.createElement('meta');
+      openGraphUrl.setAttribute('property', 'og:url');
+      openGraphUrl.content = 'https://open-coscientist.com';
+      document.head.append(openGraphUrl);
+
+      render(<NoIndex title="Private" />);
+
+      await waitFor(() => {
+        expect(document.head.querySelector('link[rel="canonical"]')).toBeNull();
+        expect(
+          document.head.querySelector('meta[property="og:url"]'),
+        ).toBeNull();
+      });
+    });
   });
 });

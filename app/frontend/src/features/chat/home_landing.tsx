@@ -9,7 +9,7 @@ import {
   type ReactNode,
   type Ref,
 } from 'react';
-import {useLocation} from 'react-router-dom';
+import {Link, useLocation} from 'react-router-dom';
 import {createPortal} from 'react-dom';
 import {smoothScrollToSection} from '@/shared/lib/smooth_scroll';
 import {
@@ -388,11 +388,20 @@ function LandingRail({reduceMotion}: {reduceMotion: boolean}) {
   return (
     <div
       ref={anchorRef}
-      className={joinClasses('min-h-[66px]', sticky && 'sticky top-0 z-5')}
+      className={joinClasses(
+        'flex min-h-[66px] items-center justify-center gap-2',
+        sticky && 'sticky top-0 z-5',
+      )}
     >
       <div inert={inHeader} aria-hidden={inHeader || undefined}>
         <LandingTabs reduceMotion={reduceMotion} />
       </div>
+      <Link
+        to="/privacy"
+        className={buttonClasses({variant: 'text', size: 'sm'})}
+      >
+        Privacy
+      </Link>
       {slot &&
         createPortal(
           <div

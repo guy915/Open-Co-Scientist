@@ -11,6 +11,7 @@ import {Layout} from './layout';
 import {ChatWorkspace} from '@/features/chat/chat_workspace';
 import {ExampleChat} from '@/features/chat/example_chat';
 import {ThemeProvider} from '@/shared/hooks/theme_context';
+import {PageMetadata} from '@/shared/hooks/use_page_metadata';
 import {DocumentSkeleton} from '@/shared/ui';
 
 const RunDetail = lazy(() =>
@@ -61,13 +62,29 @@ function WorkbenchRoutes() {
         path="/operations/spend"
         element={page('Model spend', <SpendView />)}
       />
-      <Route path="/" element={page('Workspace', <ChatWorkspace />)} />
-      <Route path="/privacy" element={<PrivacyPage />} />
-      <Route path="/chats/:id" element={page('Workspace', <ChatWorkspace />)} />
       <Route
-        path="/examples/:id"
-        element={page('Example chat', <ExampleChat />)}
+        path="/"
+        element={
+          <>
+            <PageMetadata
+              title="Open Co-Scientist"
+              description="Generate, evaluate, and rank research hypotheses with a team of agents."
+              indexable
+              canonical="https://open-coscientist.com"
+            />
+            <ChatWorkspace />
+          </>
+        }
       />
+      <Route path="/index.html" element={<Navigate to="/" replace />} />
+      <Route path="/privacy" element={<PrivacyPage />} />
+      <Route
+        path="/privacy/index.html"
+        element={<Navigate to="/privacy" replace />}
+      />
+      <Route path="/chats/:id" element={page('Workspace', <ChatWorkspace />)} />
+      <Route path="/examples/:id" element={<ExampleChat />} />
+      <Route path="/examples/:id/index.html" element={<ExampleChat />} />
       <Route path="/runs" element={<Navigate to="/" replace />} />
       <Route path="/runs/new" element={<Navigate to="/" replace />} />
       {/* One required-param route makes tab changes reuse RunDetail instead of refetching and blanking the header. */}

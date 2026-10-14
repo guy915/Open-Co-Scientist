@@ -45,6 +45,9 @@ for (const theme of ['light', 'dark']) {
       await expect(feedback).toBeFocused();
       const examples = await api.listDemoRuns();
       await page.goto(`/examples/${examples[0].id}`);
+      await page
+        .getByRole('button', {name: 'Open example', exact: true})
+        .click();
       await expect(page).toHaveURL(/\/chats\//);
       const linkedRun = await page
         .getByRole('link', {name: 'View session details'})

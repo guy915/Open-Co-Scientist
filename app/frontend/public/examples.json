@@ -1,0 +1,71 @@
+[
+  {
+    "id": "8b4bb024-4314-44ec-a8ef-48108bda7113",
+    "title": "Metabolic Vulnerabilities in S. aureus Biofilms - Open Co-Scientist",
+    "description": "What mechanisms drive antibiotic resistance in Staphylococcus aureus biofilms, and which metabolic pathways could be targeted to restore susceptibility?",
+    "heading": "Metabolic Vulnerabilities in S. aureus Biofilms",
+    "goal": "What mechanisms drive antibiotic resistance in Staphylococcus aureus biofilms, and which metabolic pathways could be targeted to restore susceptibility?",
+    "lastmod": "2026-10-06",
+    "summary": "The proposals converge on metabolic state as a modulator of tolerance, but each needs strain-aware validation in a mature biofilm model before any translational interpretation. The ranked program deliberately keeps competing mechanisms separate, then uses perturbation, rescue, and independent-model replication to decide which should advance.",
+    "ideas": [
+      {
+        "title": "Metabolic wake-up before vancomycin exposure",
+        "statement": "A short, non-growth-promoting metabolic pulse before vancomycin may reduce tolerance in mature S. aureus biofilms."
+      },
+      {
+        "title": "MazEF state predicts a tolerant biofilm subpopulation",
+        "statement": "MazEF-associated transcriptional state may identify the biofilm cells that survive bactericidal antibiotic pulses."
+      },
+      {
+        "title": "Matrix-restricted nutrient access creates a reversible tolerance niche",
+        "statement": "Nutrient gradients within the matrix may create a reversible low-energy niche that can be selectively disrupted."
+      }
+    ]
+  },
+  {
+    "id": "8b8b5183-6667-441c-8991-2eb8d35c7ec4",
+    "title": "Adolescent Prefrontal Circuit Refinement - Open Co-Scientist",
+    "description": "How does synaptic pruning in the prefrontal cortex contribute to cognitive flexibility during adolescent development?",
+    "heading": "Adolescent Prefrontal Circuit Refinement",
+    "goal": "How does synaptic pruning in the prefrontal cortex contribute to cognitive flexibility during adolescent development?",
+    "lastmod": "2026-10-06",
+    "summary": "The best path is a longitudinal design that measures circuit refinement and behavior in the same animals, while avoiding a claim that pruning alone determines cognition. The ranked program deliberately keeps competing mechanisms separate, then uses perturbation, rescue, and independent-model replication to decide which should advance.",
+    "ideas": [
+      {
+        "title": "A narrow microglial refinement window calibrates rule shifting",
+        "statement": "Transient microglial synapse engagement during mid-adolescence may calibrate later prefrontal rule-shift performance."
+      },
+      {
+        "title": "Complement tagging separates flexible from persistent synapses",
+        "statement": "Complement-associated tagging may preferentially mark a subset of adolescent prefrontal synapses for refinement."
+      },
+      {
+        "title": "Circuit synchrony mediates the behavior link",
+        "statement": "The effect of adolescent refinement on flexibility may be mediated by maturation of prefrontal network synchrony."
+      }
+    ]
+  },
+  {
+    "id": "34bc7dbc-6c3c-4332-a061-f453c8d58020",
+    "title": "Ferroptosis Sensitization in Pancreatic Cancer - Open Co-Scientist",
+    "description": "What are the key molecular regulators of ferroptosis in pancreatic cancer cells, and how might their modulation enhance chemotherapy sensitivity?",
+    "heading": "Ferroptosis Sensitization in Pancreatic Cancer",
+    "goal": "What are the key molecular regulators of ferroptosis in pancreatic cancer cells, and how might their modulation enhance chemotherapy sensitivity?",
+    "lastmod": "2026-10-06",
+    "summary": "The proposals share a redox-resistance theme. Priority should go to biomarker-stratified combinations with orthogonal death-pathway controls before moving beyond cell and organoid models. The ranked program deliberately keeps competing mechanisms separate, then uses perturbation, rescue, and independent-model replication to decide which should advance.",
+    "ideas": [
+      {
+        "title": "CPEB1-low tumors depend on NRF2 redox buffering",
+        "statement": "CPEB1-low pancreatic cancer models may have a measurable NRF2-buffering state that predicts reduced response to a ferroptosis-inducing combination."
+      },
+      {
+        "title": "ARID3A-PTEN-GPX4 status selects a chemosensitization subgroup",
+        "statement": "An ARID3A-high, PTEN-suppressed subgroup may be selectively sensitized when ferroptosis resistance is relieved during gemcitabine exposure."
+      },
+      {
+        "title": "Early lipid-peroxidation kinetics predict durable combination response",
+        "statement": "Early lipid-peroxidation kinetics may distinguish transient stress from a durable ferroptosis-linked chemosensitization response."
+      }
+    ]
+  }
+]

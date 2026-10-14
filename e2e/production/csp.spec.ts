@@ -186,6 +186,13 @@ for (const theme of ["light", "dark"]) {
         ).toHaveCount(0);
       }
       if (path.startsWith("/examples/")) {
+        await expect(page).toHaveURL(path);
+        await expect(
+          page.getByRole("button", { name: "Open example", exact: true }),
+        ).toBeVisible();
+        await page
+          .getByRole("button", { name: "Open example", exact: true })
+          .click();
         await expect(page).toHaveURL(/\/chats\//);
         await page.reload();
         await expect(

@@ -1,0 +1,55 @@
+name: Bug report
+description: Something does not work as expected.
+labels: ["type: bug", "needs triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For security vulnerabilities, use a private advisory instead; see
+        [SECURITY.md](https://github.com/guy915/Open-Co-Scientist/blob/main/SECURITY.md).
+        Search existing issues before submitting. Remove credentials and private
+        research data from examples, logs and screenshots.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: Describe the failure and its impact. Include the exact error message if available.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Include a minimal example, the run size and any settings needed to reproduce the problem.
+      placeholder: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where it happened
+      options:
+        - Local checkout
+        - Hosted site (open-coscientist.com)
+        - Local Docker Compose
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment (if known)
+      description: Include relevant details such as commit, operating system, browser, runtime versions, provider/model or deterministic test backend. Never include API keys.
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs and screenshots
+      description: Remove API keys, tokens and personal or research data before pasting.

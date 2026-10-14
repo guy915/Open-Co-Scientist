@@ -1,0 +1,3 @@
+# Root-wide formatting must not rewrite pinned third-party trees.
+# Package-local configurations still govern their own sources.
+extend-exclude = ["vendor", "references"]

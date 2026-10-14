@@ -1,0 +1,30 @@
+{
+  "name": "citation-entailment-v1",
+  "version": 2,
+  "license": "synthetic, CC0 — hand-written examples, no external corpus",
+  "description": "Labeled claim/evidence set for the entailment assessor. Each item is a claim, a list of evidence passages, an expected structured label (supports/contradicts/insufficient), and a `kind`: `obvious` (label recoverable by lexical overlap), `hard_paraphrase` (the entailing/contradicting passage restates the claim with different words and — for contradictions — no explicit negation cue, so token-overlap assessors miss it and a semantic/NLI assessor is required), or `mixed` (multiple passages, some irrelevant or conflicting, exercising claim-specific retrieval and contradiction dominance). Synthetic and legally shareable; NOT Google's private set. Human audit and threshold selection remain an external gap (no annotator panel).",
+  "items": [
+    {"kind": "obvious", "claim": "Kinase X inhibition reduces AML tumor growth.", "passages": ["Kinase X inhibition reduces AML tumor growth in multiple cell lines."], "label": "supports"},
+    {"kind": "obvious", "claim": "Blocking receptor Y restores immune surveillance.", "passages": ["Receptor Y blockade restores immune surveillance in murine models."], "label": "supports"},
+    {"kind": "obvious", "claim": "Metabolic reprogramming via Z sensitizes cells to therapy.", "passages": ["Z-driven metabolic reprogramming sensitizes cells to therapy."], "label": "supports"},
+    {"kind": "obvious", "claim": "Kinase X inhibition reduces AML tumor growth.", "passages": ["Kinase X inhibition did not reduce AML tumor growth in this cohort."], "label": "contradicts"},
+    {"kind": "obvious", "claim": "Drug A improves survival in glioblastoma.", "passages": ["Drug A showed no significant survival benefit in glioblastoma."], "label": "contradicts"},
+    {"kind": "obvious", "claim": "Gene G is associated with disease D.", "passages": ["We found no association between gene G and disease D."], "label": "contradicts"},
+    {"kind": "obvious", "claim": "Compound C is effective against pathogen P.", "passages": ["Compound C was ineffective against pathogen P at all doses."], "label": "contradicts"},
+    {"kind": "obvious", "claim": "Inhibiting kinase X reduces tumor growth in AML cells.", "passages": ["This review discusses cardiac tissue development in zebrafish."], "label": "insufficient"},
+    {"kind": "obvious", "claim": "Pathway W drives fibrosis progression.", "passages": ["An unrelated study of soil microbiome diversity."], "label": "insufficient"},
+    {"kind": "obvious", "claim": "Target T is druggable in solid tumors.", "passages": ["A general commentary on the history of oncology funding."], "label": "insufficient"},
+    {"kind": "obvious", "claim": "Protein Q folds via a two-state mechanism.", "passages": ["Protein Q folding proceeds through a two-state mechanism without intermediates."], "label": "supports"},
+    {"kind": "obvious", "claim": "Vaccine V elicits durable antibody responses.", "passages": ["Vaccine V did not elicit durable antibody responses beyond six months."], "label": "contradicts"},
+
+    {"kind": "hard_paraphrase", "claim": "Kinase X inhibition reduces AML tumor growth.", "passages": ["Pharmacological blockade of the X kinase curtailed leukemic proliferation across myeloid malignancy xenografts."], "label": "supports"},
+    {"kind": "hard_paraphrase", "claim": "Blocking receptor Y restores immune surveillance.", "passages": ["Antagonism of the Y receptor re-established antitumor immunosurveillance in vivo."], "label": "supports"},
+    {"kind": "hard_paraphrase", "claim": "Compound C is effective against pathogen P.", "passages": ["Administration of agent C eradicated the P microorganism in infected hosts."], "label": "supports"},
+    {"kind": "hard_paraphrase", "claim": "Drug A improves survival in glioblastoma.", "passages": ["Overall survival remained statistically equivalent between the compound A and placebo arms in high-grade glioma."], "label": "contradicts"},
+    {"kind": "hard_paraphrase", "claim": "Vaccine V elicits durable antibody responses.", "passages": ["Antibody titers following immunization with V waned to pre-vaccination baseline within eight weeks."], "label": "contradicts"},
+
+    {"kind": "mixed", "claim": "Metabolic reprogramming via Z sensitizes cells to therapy.", "passages": ["A protocol note on tissue-culture reagent storage.", "Z-driven metabolic reprogramming sensitizes cells to therapy in resistant lines.", "A commentary on peer-review timelines."], "label": "supports"},
+    {"kind": "mixed", "claim": "Kinase X inhibition reduces AML tumor growth.", "passages": ["Kinase X inhibition reduces AML tumor growth in cultured cell lines.", "In the validation cohort, kinase X inhibition did not reduce AML tumor growth."], "label": "contradicts"},
+    {"kind": "mixed", "claim": "Pathway W drives fibrosis progression.", "passages": ["A study of unrelated renal electrolyte physiology.", "General notes on laboratory biosafety levels.", "A dataset description for a plant-genomics repository."], "label": "insufficient"}
+  ]
+}

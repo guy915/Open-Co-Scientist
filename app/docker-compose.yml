@@ -1,0 +1,80 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    container_name: coscientist-api
+    env_file:
+      - .env
+    ports:
+      - "8008:8008"
+    environment:
+      - MCP_SERVER_URL=http://mcp:8888/mcp
+      # Optional MCP authentication requires identical secrets on both services.
+      - COSCIENTIST_MCP_SHARED_SECRET=${COSCIENTIST_MCP_SHARED_SECRET:-}
+      # Container recreation discards writable layers; bind-mount SQLite to preserve durable
+      # runs.
+      - COSCIENTIST_DB_PATH=/app/data/coscientist.db
+      # Clone refs resolve again on recreation; pin a SHA for reproducibility.
+      - COSCIENTIST_ENGINE_REPO=
+      - COSCIENTIST_ENGINE_REF=main
+    volumes:
+      - ./data:/app/data
+      - ${COSCIENTIST_ENGINE_PATH:-../engine}:/workspace/co-scientist-engine
+    depends_on:
+      mcp:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8008/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  ui:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: coscientist-ui
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+      - ./frontend/index.html:/app/index.html
+      - ./frontend/vite.config.ts:/app/vite.config.ts
+      - ./frontend/tsconfig.json:/app/tsconfig.json
+    environment:
+      - NODE_ENV=development
+    restart: unless-stopped
+
+  mcp:
+    build:
+      context: ${COSCIENTIST_ENGINE_PATH:-../engine}
+      dockerfile: mcp_server/Dockerfile
+    container_name: coscientist-mcp
+    ports:
+      - "8888:8888"
+    environment:
+      - COSCIENTIST_MCP_PORT=8888
+      # MCP and API secrets must agree, or both remain unset.
+      - COSCIENTIST_MCP_SHARED_SECRET=${COSCIENTIST_MCP_SHARED_SECRET:-}
+      # PubMed can degrade gracefully without an Entrez contact email.
+    volumes:
+      - ${COSCIENTIST_ENGINE_PATH:-../engine}/mcp_server/paper_cache:/app/mcp_server/paper_cache
+      - ${COSCIENTIST_ENGINE_PATH:-../engine}/mcp_server:/app/mcp_server
+    # Reload can interrupt in-flight literature calls; keep it confined to development.
+    command: >
+      uvicorn mcp_server.server:app
+      --host 0.0.0.0
+      --port 8888
+      --reload
+      --reload-dir mcp_server
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8888', timeout=5.0, trust_env=False).raise_for_status()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s

@@ -1,0 +1,65 @@
+name: coscientist-launch-load
+services:
+  api:
+    image: ${LOAD_API_IMAGE:-coscientist-launch-load:local}
+    user: "0:0"
+    command: [python, -m, uvicorn, test_api:app, --app-dir, /load, --host, 0.0.0.0, --port, "8008", --workers, "1", --no-proxy-headers, --timeout-graceful-shutdown, "20", --timeout-keep-alive, "${LOAD_HTTP_KEEPALIVE:-15}"]
+    environment:
+      PYTHON_DOTENV_DISABLED: "1"
+      COSCIENTIST_DB_PATH: /app/data/load.db
+      COSCIENTIST_TEST_DOUBLE: "deterministic"
+      LITELLM_LOCAL_MODEL_COST_MAP: "True"
+      WORKER_POOL_SIZE: "1"
+      LOAD_TEST: "1"
+      LOAD_PEERS: ${LOAD_PEERS:-40}
+      LOAD_MODEL_DELAY: ${LOAD_MODEL_DELAY:-0.1}
+      LOAD_FIXTURE_PAGES: ${SSE_PAGES:-200}
+      MODEL_NAME: load-test/deterministic
+      SUPERVISOR_MODEL_NAME: load-test/deterministic
+      CHAT_MODEL_NAME: load-test/deterministic
+      SEMANTIC_SAFETY_MODEL: load-test/deterministic
+      LOGS_ADMIN_TOKEN: local-load-only
+      MAX_CONCURRENT_RUNS: ${MAX_CONCURRENT_RUNS:-10}
+      SSE_MAX_CONNECTIONS: ${SSE_MAX_CONNECTIONS:-256}
+    volumes:
+      - load-db:/app/data
+      - ./:/load:ro
+    ports: ["127.0.0.1:8008:8008"]
+    mem_limit: 2g
+    cpus: 2
+    networks: [local]
+  master:
+    image: ${LOAD_GENERATOR_IMAGE:-coscientist-locust:local}
+    entrypoint: [locust]
+    command: [-f, /load/locustfile.py, --master, --headless, --expect-workers, "1", --expect-workers-max-wait, "60", --host, "http://api:8008", --run-time, "${LOAD_DURATION:-300}s", --csv, /results/requests, --csv-full-history, --html, /results/report.html]
+    environment: &load-env
+      SSE_PAGES: ${SSE_PAGES:-200}
+      VISITORS_PER_MINUTE: ${VISITORS_PER_MINUTE:-500}
+      LOAD_DURATION: ${LOAD_DURATION:-300}
+      START_ATTEMPTS: ${START_ATTEMPTS:-50}
+      LOAD_PREFLIGHT: ${LOAD_PREFLIGHT:-1}
+    volumes: ["./:/load:ro", "${LOAD_RESULTS:-./results}:/results"]
+    networks: [local]
+  worker:
+    image: ${LOAD_GENERATOR_IMAGE:-coscientist-locust:local}
+    cap_add: [NET_ADMIN]
+    entrypoint: [python, /load/worker.py]
+    command: [-f, /load/locustfile.py, --worker, --master-host, master, --host, "http://api:8008"]
+    environment:
+      <<: *load-env
+      LOAD_PEERS: ${LOAD_PEERS:-40}
+    volumes: ["./:/load:ro"]
+    networks: [local]
+  sampler:
+    image: ${LOAD_GENERATOR_IMAGE:-coscientist-locust:local}
+    entrypoint: [python]
+    command: [/load/sample.py, /results/telemetry.jsonl, --seconds, "${LOAD_DURATION:-300}"]
+    volumes: ["./:/load:ro", "${LOAD_RESULTS:-./results}:/results"]
+    networks: [local]
+networks:
+  local:
+    internal: true
+    ipam:
+      config: [{subnet: 172.29.251.0/24}]
+volumes:
+  load-db:

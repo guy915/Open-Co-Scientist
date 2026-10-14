@@ -1,0 +1,55 @@
+# Manual cleanup: deletes merged or abandoned branches. Keeps the default
+# branch, every branch behind an open PR and any branch with a recent commit,
+# so work in progress loses nothing.
+name: Prune branches
+
+on:
+  workflow_dispatch:
+    inputs:
+      min_age_hours:
+        description: Keep branches with a commit newer than this many hours
+        type: number
+        default: 24
+      dry_run:
+        description: Only list what would be deleted
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  prune:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      MIN_AGE_HOURS: ${{ inputs.min_age_hours }}
+      DRY_RUN: ${{ inputs.dry_run }}
+    steps:
+      - name: Delete stale branches
+        run: |
+          set -euo pipefail
+          default=$(gh api "repos/$REPO" --jq .default_branch)
+          keep=$(gh api --paginate "repos/$REPO/pulls?state=open&per_page=100" \
+            --jq '.[].head.ref')
+          cutoff=$(( $(date +%s) - MIN_AGE_HOURS * 3600 ))
+          deleted=0
+          while read -r branch sha; do
+            [ "$branch" = "$default" ] && continue
+            grep -qxF "$branch" <<< "$keep" && { echo "keep (open PR): $branch"; continue; }
+            when=$(gh api "repos/$REPO/commits/$sha" --jq .commit.committer.date)
+            if [ "$(date -d "$when" +%s)" -gt "$cutoff" ]; then
+              echo "keep (recent): $branch"
+              continue
+            fi
+            echo "delete: $branch"
+            if [ "$DRY_RUN" != "true" ]; then
+              gh api -X DELETE "repos/$REPO/git/refs/heads/$branch"
+              deleted=$((deleted + 1))
+            fi
+          done < <(gh api --paginate "repos/$REPO/branches?per_page=100" \
+            --jq '.[] | "\(.name) \(.commit.sha)"')
+          echo "Deleted $deleted branches" | tee -a "$GITHUB_STEP_SUMMARY"

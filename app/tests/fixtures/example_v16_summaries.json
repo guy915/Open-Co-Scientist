@@ -1,0 +1,26 @@
+{
+  "8b4bb024-4314-44ec-a8ef-48108bda7113": {
+    "Metabolic wake-up before vancomycin exposure": "The proposal tests whether temporarily increasing metabolic activity makes antibiotic targets more exposed without dispersing the biofilm.",
+    "MazEF state predicts a tolerant biofilm subpopulation": "MazEF is treated as a state marker and perturbation point, not as a validated therapeutic target.",
+    "Matrix-restricted nutrient access creates a reversible tolerance niche": "The proposal distinguishes a spatial metabolic niche from a population-wide resistance mutation.",
+    "Oxygen-gradient collapse reveals an antibiotic-sensitive sublayer": "In mature Staphylococcus aureus biofilms, a spatial oxygen deficit may create a low-energy survivor compartment; restoring oxygen before antibiotic challenge could shrink it without dispersing the biofilm.",
+    "MazEF\u2013ica epistasis partitions biomass from tolerance": "MazEF-dependent tolerance may be separable from ica-dependent biomass accumulation; genetic epistasis could test whether one branch controls both or matrix production masks a distinct survivor program.",
+    "Persister exit kinetics nominate a sequential killing window": "Metabolically silent survivors may become transiently vulnerable during growth reactivation, making exit-window duration relevant to sequential rather than simultaneous combination treatment."
+  },
+  "8b8b5183-6667-441c-8991-2eb8d35c7ec4": {
+    "A narrow microglial refinement window calibrates rule shifting": "The proposal predicts timing-specific, rather than chronic, microglial influence on circuit refinement.",
+    "Complement tagging separates flexible from persistent synapses": "The proposal asks whether synapse identity and activity, not bulk synapse number, predict microglial engagement.",
+    "Circuit synchrony mediates the behavior link": "Circuit-level synchrony is positioned as an intermediate readout between synapse remodeling and behavior.",
+    "Dopamine-gated microglial surveillance selects a plastic synapse subset": "Reward-linked dopaminergic input during adolescence may alter microglial surveillance of selected frontal synapses, linking salient experience to later circuit flexibility without globally increasing pruning.",
+    "Complement tagging encodes synapse history rather than bulk elimination": "Complement-associated tagging may mark synapses with recent activity histories for refinement, making activity-tagged identity a better predictor of engulfment than total spine density.",
+    "Inhibitory maturation sets the behavioral consequence of pruning": "The effect of adolescent excitatory-synapse refinement on flexibility may depend on local inhibitory maturation, so experiments should also measure excitation-inhibition balance."
+  },
+  "34bc7dbc-6c3c-4332-a061-f453c8d58020": {
+    "CPEB1-low tumors depend on NRF2 redox buffering": "CPEB1 loss is proposed to stabilize an anti-ferroptotic program through the p62/KEAP1/NRF2 axis.",
+    "ARID3A-PTEN-GPX4 status selects a chemosensitization subgroup": "The proposal tests a transcriptional route from ARID3A to PTEN and GPX4-linked lipid-peroxide control.",
+    "Early lipid-peroxidation kinetics predict durable combination response": "A kinetic biomarker is proposed to connect proximal redox effects to longer-term loss of clonogenic survival.",
+    "CUL2 status defines an NRF2-stabilized ferroptosis-resistant state": "CUL2-high PDAC models may maintain NRF2 signalling by competing for KEAP1, creating a biomarker-defined ferroptosis-resistant state distinct from generic gemcitabine resistance.",
+    "USP8 creates a pharmacodynamic delay in NRF2 turnover": "USP8-mediated stabilization of NRF2 may prolong antioxidant defenses after gemcitabine, making turnover kinetics a more useful combination biomarker than baseline expression.",
+    "TSPAN15\u2013ITGB1 signaling couples adhesion to GPX4-dependent survival": "TSPAN15 may sustain an integrin-linked FAK/AKT/mTOR program that raises GPX4 and protects a matrix-adherent PDAC subpopulation from gemcitabine-associated ferroptosis."
+  }
+}

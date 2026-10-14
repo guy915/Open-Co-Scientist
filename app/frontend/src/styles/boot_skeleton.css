@@ -1,0 +1,682 @@
+/* The first paint before the app bundle runs (index.html #root). It mirrors the
+   shell (layout.tsx), the home stage (chat_home_stage.tsx), the chat column and
+   the report frame (run_detail_shell.tsx) at their own breakpoints; change
+   them together. The inline script in index.html sets data-theme and
+   data-boot (home, chat, report or page) before this sheet applies. */
+
+.boot {
+  display: grid;
+  grid-template-columns: 4.5rem minmax(0, 1fr);
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--cosci-rail);
+}
+
+.boot-status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.boot-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  height: 100vh;
+  height: 100dvh;
+  box-sizing: border-box;
+  padding: 1.75rem 0 1.5rem;
+}
+
+.boot-rail-group {
+  display: grid;
+  gap: 1.75rem;
+}
+
+.boot-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 0.375rem;
+}
+
+.boot-workspace {
+  display: grid;
+  grid-template-rows: 4rem minmax(0, 1fr);
+  min-width: 0;
+  height: 100vh;
+  height: 100dvh;
+  overflow: clip;
+  border-radius: var(--radius-workspace, 1.875rem) 0 0
+    var(--radius-workspace, 1.875rem);
+  background: var(--cosci-bg);
+}
+
+.boot-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0 1.35rem 0 1.75rem;
+}
+
+.boot-menu {
+  display: none;
+}
+
+.boot-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.boot-logo {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 0.375rem;
+}
+
+.boot-wordmark {
+  width: 10rem;
+  height: 1.125rem;
+}
+
+.boot-action {
+  width: 7.25rem;
+  height: 2.375rem;
+}
+
+.boot-page {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.boot-line {
+  display: block;
+  height: 0.875rem;
+  border-radius: 999px;
+}
+
+.boot-view {
+  display: none;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+:root:not([data-boot]) .boot-home,
+:root[data-boot='home'] .boot-home,
+:root[data-boot='chat'] .boot-chat,
+:root[data-boot='report'] .boot-report,
+:root[data-boot='page'] .boot-document {
+  display: grid;
+}
+
+/* Home: greeting, steps, suggestions and composer, with recents on wide screens. */
+.boot-home {
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+  padding: 0 clamp(1.5rem, 4vw, 2.25rem);
+}
+
+.boot-home-main {
+  display: grid;
+  grid-template-rows:
+    minmax(0, clamp(2.4rem, 7vh, 3.5rem)) auto auto minmax(2rem, 1fr)
+    auto max-content max-content;
+  width: min(100%, 43rem);
+  height: 100%;
+  box-sizing: border-box;
+  padding-bottom: clamp(1rem, 2.5vh, 1.75rem);
+}
+
+.boot-greeting {
+  display: grid;
+  grid-row: 2;
+  justify-items: center;
+  gap: 0.875rem;
+  width: min(100%, 34.375rem);
+  margin: 0 auto 0.5rem;
+}
+
+.boot-greeting .boot-line {
+  height: 2.25rem;
+}
+
+.boot-greeting .boot-line:first-child {
+  width: 88%;
+}
+
+.boot-greeting .boot-line:last-child {
+  width: 46%;
+}
+
+.boot-logo-mark {
+  display: none;
+}
+
+.boot-steps {
+  position: relative;
+  display: grid;
+  grid-row: 3;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(1.5rem, 3vw, 4rem);
+  margin-top: clamp(3.7rem, 8.5vh, 5.2rem);
+}
+
+.boot-steps::before {
+  position: absolute;
+  top: calc(0.9375rem - 1px);
+  right: 0;
+  left: 0;
+  height: 2px;
+  background: var(--skeleton-bg);
+  content: '';
+}
+
+.boot-step {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: 1.1rem;
+}
+
+.boot-step-number {
+  width: 1.875rem;
+  height: 1.875rem;
+  border-radius: 999px;
+}
+
+.boot-step-lines {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.boot-step-lines .boot-line:first-child {
+  width: 62%;
+  margin-bottom: 0.25rem;
+}
+
+.boot-step-lines .boot-line:nth-child(3) {
+  width: 92%;
+}
+
+.boot-step-lines .boot-line:last-child {
+  width: 68%;
+}
+
+.boot-suggestions {
+  display: grid;
+  grid-row: 5;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.875rem;
+}
+
+.boot-suggestion {
+  display: grid;
+  align-content: center;
+  gap: 0.55rem;
+  min-height: 4.375rem;
+  box-sizing: border-box;
+  padding: 0 0.875rem;
+  border: 1px solid var(--cosci-skeleton);
+  border-radius: 1rem;
+}
+
+.boot-suggestion .boot-line:last-child {
+  width: 64%;
+}
+
+.boot-suggestion-icon {
+  display: none;
+}
+
+.boot-composer {
+  position: relative;
+  grid-row: 6;
+  min-height: 7.9rem;
+  margin-top: 1rem;
+  box-sizing: border-box;
+  border: 1px solid var(--cosci-composer-border);
+  border-radius: 2rem;
+  background: var(--cosci-composer-bg);
+  box-shadow: var(--cosci-composer-shadow);
+}
+
+.boot-composer > .boot-line {
+  position: absolute;
+  top: 1.45rem;
+  left: 1.55rem;
+  width: min(15rem, 55%);
+}
+
+.boot-composer-tools {
+  position: absolute;
+  right: 1.5rem;
+  bottom: 1.15rem;
+  left: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.boot-composer-tools .boot-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 999px;
+}
+
+.boot-composer-tools .boot-icon:last-child {
+  margin-left: auto;
+}
+
+.boot-scroll-hint {
+  grid-row: 7;
+  justify-self: center;
+  width: min(21rem, 100%);
+  height: 2.5rem;
+  margin-top: 0.75rem;
+  box-sizing: border-box;
+  border: 1px solid var(--cosci-skeleton);
+  border-radius: 999px;
+}
+
+.boot-recents {
+  display: none;
+}
+
+/* The recents column joins the home stage only at the desktop width. */
+@media (min-width: 1181px) {
+  .boot-home {
+    grid-template-columns:
+      minmax(0, 1fr)
+      minmax(19rem, clamp(19rem, 18vw, 20.5rem));
+    gap: clamp(2.25rem, 3.1vw, 3.35rem);
+    align-items: start;
+    justify-items: stretch;
+    padding: 0 clamp(0.7rem, 1.2vw, 1.3rem) 0 clamp(2rem, 3vw, 4rem);
+  }
+
+  .boot-home-main {
+    grid-template-rows:
+      minmax(1.5rem, clamp(4.85rem, 8.8vh, 6.4rem)) auto
+      minmax(1.25rem, clamp(3.85rem, 7.6vh, 5.8rem)) auto minmax(2rem, 1fr)
+      auto max-content max-content;
+    justify-self: center;
+    width: 100%;
+    max-width: clamp(46rem, 55vw, 53.5rem);
+    padding-bottom: clamp(1.35rem, 3.2vh, 2.25rem);
+  }
+
+  .boot-greeting {
+    width: min(100%, 43.5rem);
+  }
+
+  .boot-greeting .boot-line {
+    height: 2.5rem;
+  }
+
+  .boot-steps {
+    grid-row: 4;
+    gap: 4rem;
+    margin-top: 0;
+  }
+
+  .boot-suggestions {
+    grid-row: 6;
+  }
+
+  .boot-composer {
+    grid-row: 7;
+  }
+
+  .boot-scroll-hint {
+    grid-row: 8;
+  }
+
+  .boot-recents {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 1.5rem;
+    height: 100%;
+    box-sizing: border-box;
+    padding-top: clamp(0.35rem, 1vh, 0.75rem);
+    overflow: hidden;
+  }
+
+  .boot-recents-heading {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    height: 1.5rem;
+  }
+
+  .boot-recents-heading .boot-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 999px;
+  }
+
+  .boot-recents-heading .boot-line {
+    width: 4.5rem;
+    height: 1rem;
+  }
+
+  .boot-recents-list {
+    display: grid;
+    align-content: start;
+    gap: 1.75rem;
+    min-height: 0;
+    padding: 0.55rem 0.55rem 2.15rem;
+    overflow: hidden;
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 2.25rem), transparent);
+  }
+
+  .boot-recent {
+    display: grid;
+    align-content: start;
+    gap: 0.75rem;
+    padding: 1rem;
+    border-radius: 0.75rem;
+    background: var(--cosci-composer-bg);
+    box-shadow: var(--card-shadow);
+  }
+
+  .boot-recent-chips {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .boot-recent-chips .boot-line {
+    width: 4.25rem;
+    height: 1.4rem;
+    border-radius: 0.375rem;
+  }
+
+  .boot-recent-chips .boot-line:last-child {
+    width: 7.5rem;
+  }
+
+  .boot-recent-title,
+  .boot-recent-text {
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .boot-recent-title .boot-line {
+    height: 1.05rem;
+  }
+
+  .boot-recent-title .boot-line:last-child {
+    width: 62%;
+  }
+
+  .boot-recent-text {
+    gap: 0.55rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .boot-recent-text .boot-line {
+    height: 0.8rem;
+  }
+
+  .boot-recent-text .boot-line:nth-child(2) {
+    width: 88%;
+  }
+
+  .boot-recent-text .boot-line:last-child {
+    width: 72%;
+  }
+}
+
+/* Chat: a conversation column ending in the composer. */
+.boot-chat {
+  grid-template-rows: minmax(0, 1fr) auto;
+  justify-items: center;
+  padding: 2.5rem 1.5rem 1.75rem;
+}
+
+.boot-thread {
+  display: grid;
+  align-content: start;
+  gap: 2.25rem;
+  width: min(100%, 50.75rem);
+  overflow: hidden;
+}
+
+.boot-bubble {
+  display: grid;
+  gap: 0.6rem;
+  justify-self: end;
+  width: min(31rem, 70%);
+  box-sizing: border-box;
+  padding: 1rem 1.25rem;
+  border-radius: 1.625rem;
+  background: var(--cosci-panel);
+}
+
+.boot-bubble .boot-line:last-child {
+  width: 58%;
+}
+
+.boot-reply {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.boot-reply .boot-line:nth-child(2) {
+  width: 94%;
+}
+
+.boot-reply .boot-line:nth-child(3) {
+  width: 97%;
+}
+
+.boot-reply .boot-line:last-child {
+  width: 46%;
+}
+
+.boot-chat .boot-composer {
+  width: min(100%, 50.75rem);
+  margin-top: 1.5rem;
+}
+
+/* Report: back link and title, then the document. The section tabs join only
+   once the run has loaded, as in the app. */
+.boot-report {
+  grid-template-rows: 3.75rem minmax(0, 1fr);
+}
+
+.boot-report-titlebar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0 2.25rem;
+  border-bottom: 1px solid var(--cosci-border);
+}
+
+.boot-report-titlebar .boot-icon {
+  border-radius: 999px;
+}
+
+.boot-report-titlebar .boot-line {
+  width: 7.5rem;
+  height: 1.1rem;
+}
+
+.boot-report .boot-article,
+.boot-document .boot-article {
+  margin-top: 2.25rem;
+}
+
+/* Page: a heading and paragraphs (operations). */
+.boot-document {
+  align-content: start;
+}
+
+.boot-article {
+  display: grid;
+  align-content: start;
+  gap: 1.75rem;
+  width: min(100% - 3rem, 58rem);
+  margin-inline: auto;
+}
+
+.boot-heading {
+  width: min(18rem, 70%);
+  height: 2.25rem;
+}
+
+.boot-subheading {
+  width: min(12rem, 50%);
+  height: 1.5rem;
+  margin-top: 0.5rem;
+}
+
+.boot-paragraph {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.boot-paragraph .boot-line:nth-child(3n + 1) {
+  width: 92%;
+}
+
+.boot-paragraph .boot-line:nth-child(3n + 2) {
+  width: 97%;
+}
+
+.boot-paragraph .boot-line:last-child {
+  width: 64%;
+}
+
+/* Phone: no rail, a centered header title and a compact home stage. */
+@media (max-width: 700px) {
+  .boot {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .boot-rail {
+    display: none;
+  }
+
+  .boot-workspace {
+    border-radius: 0;
+  }
+
+  .boot-header {
+    padding: 0 0.5rem;
+  }
+
+  .boot-menu {
+    display: block;
+    margin: 0 0.5rem;
+  }
+
+  .boot-logo {
+    display: none;
+  }
+
+  .boot-action {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  .boot-home {
+    padding: 0.75rem clamp(0.9rem, 4vw, 1.25rem) clamp(0.8rem, 2.2vh, 1.15rem);
+  }
+
+  .boot-home-main {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    padding: 0.5rem 0 0;
+  }
+
+  .boot-logo-mark {
+    display: block;
+    width: 2.5rem;
+    height: 2.5rem;
+    margin: auto auto 1rem;
+    border-radius: 0.75rem;
+  }
+
+  .boot-greeting {
+    width: 100%;
+    margin: 0 0 auto;
+  }
+
+  .boot-greeting .boot-line {
+    height: 1.9rem;
+  }
+
+  .boot-greeting .boot-line:first-child {
+    width: 92%;
+  }
+
+  .boot-greeting .boot-line:last-child {
+    width: 62%;
+  }
+
+  .boot-steps,
+  .boot-scroll-hint {
+    display: none;
+  }
+
+  .boot-suggestions {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.2rem;
+  }
+
+  .boot-suggestion {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    min-height: 2.65rem;
+    padding: 0 0.9rem;
+    border: 0;
+  }
+
+  .boot-suggestion-icon {
+    display: block;
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 999px;
+  }
+
+  .boot-suggestion .boot-line {
+    width: 72%;
+  }
+
+  .boot-suggestion .boot-line:last-child {
+    display: none;
+  }
+
+  .boot-composer {
+    min-height: 7.5rem;
+  }
+
+  .boot-chat {
+    padding: 1.5rem clamp(0.9rem, 4vw, 1.25rem) clamp(0.8rem, 2.2vh, 1.15rem);
+  }
+
+  .boot-bubble {
+    width: 82%;
+  }
+
+  .boot-report {
+    grid-template-rows: 3.25rem minmax(0, 1fr);
+  }
+
+  .boot-report-titlebar {
+    padding: 0 0.75rem;
+  }
+
+  .boot-report .boot-article,
+  .boot-document .boot-article {
+    width: min(100% - 1.2rem, 100%);
+    margin-top: 1.25rem;
+  }
+}

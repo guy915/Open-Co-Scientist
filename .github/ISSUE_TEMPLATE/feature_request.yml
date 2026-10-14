@@ -1,0 +1,35 @@
+name: Feature request
+description: Suggest an improvement.
+labels: ["type: feature", "needs triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Search existing issues before submitting. Use
+        [Discussions](https://github.com/guy915/Open-Co-Scientist/discussions)
+        for questions or early ideas. Keep credentials and private research data
+        out of examples and attachments.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What are you trying to do, and what gets in the way?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: Describe the behavior you want and who it would help.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Include any current workaround.
+  - type: textarea
+    id: success
+    attributes:
+      label: Success criteria or supporting evidence (optional)
+      description: How would you know this works? For research changes, include public sources, reproducible examples or evaluation datasets if available.

@@ -1,0 +1,516 @@
+/* Base resets must yield to utilities; omit Tailwind preflight so report
+   browser spacing remains intact. */
+@layer theme, base, components, utilities;
+
+@import 'tailwindcss/theme' layer(theme);
+@import 'tailwindcss/utilities' layer(utilities) source(none);
+
+@source "./app";
+@source "./features";
+@source "./shared";
+@source not "./shared/lib";
+@source not "./**/*.test.ts";
+@source not "./**/*.test.tsx";
+
+@font-face {
+  font-family: 'Google Sans';
+  font-display: swap;
+  font-style: normal;
+  font-weight: 400;
+  src: url('../node_modules/@fontsource/google-sans/files/google-sans-latin-400-normal.woff2')
+    format('woff2');
+}
+
+@font-face {
+  font-family: 'Google Sans';
+  font-display: swap;
+  font-style: normal;
+  font-weight: 500;
+  src: url('../node_modules/@fontsource/google-sans/files/google-sans-latin-500-normal.woff2')
+    format('woff2');
+}
+
+@font-face {
+  font-family: 'Google Sans';
+  font-display: swap;
+  font-style: normal;
+  font-weight: 700;
+  src: url('../node_modules/@fontsource/google-sans/files/google-sans-latin-700-normal.woff2')
+    format('woff2');
+}
+
+/* Component roles resolve where they are used, so a surface can re-point them
+   in its own scope (inline keeps the var() out of the root-level variable). */
+@theme inline {
+  --color-started-card-fg: var(--started-card-fg);
+  --color-button-filled-bg: var(--button-filled-bg);
+  --color-button-filled-fg: var(--button-filled-fg);
+  --color-button-filled-hover: var(--button-filled-hover);
+  --color-button-outlined-border: var(--button-outlined-border);
+  --color-button-outlined-fg: var(--button-outlined-fg);
+  --color-button-outlined-hover: var(--button-outlined-hover);
+  --color-button-accent-border: var(--button-accent-border);
+  --color-button-accent-fg: var(--button-accent-fg);
+  --color-button-accent-hover: var(--button-accent-hover);
+  --color-button-tonal-bg: var(--button-tonal-bg);
+  --color-button-tonal-fg: var(--button-tonal-fg);
+  --color-button-tonal-hover: var(--button-tonal-hover);
+  --color-button-text-fg: var(--button-text-fg);
+  --color-button-text-hover-fg: var(--button-text-hover-fg);
+  --color-button-text-hover-bg: var(--button-text-hover-bg);
+  --color-button-link-fg: var(--button-link-fg);
+  --color-button-disabled-border: var(--button-disabled-border);
+  --color-button-disabled-bg: var(--button-disabled-bg);
+  --color-button-disabled-fg: var(--button-disabled-fg);
+  --color-icon-button-fg: var(--icon-button-fg);
+  --color-icon-button-hover-fg: var(--icon-button-hover-fg);
+  --color-icon-button-hover-bg: var(--icon-button-hover-bg);
+  --color-icon-button-disabled-fg: var(--icon-button-disabled-fg);
+  --color-segmented-track: var(--segmented-track);
+  --color-segmented-border: var(--segmented-border);
+  --color-segmented-thumb: var(--segmented-thumb);
+  --color-segmented-fg: var(--segmented-fg);
+  --color-segmented-selected-fg: var(--segmented-selected-fg);
+  --color-segmented-hover: var(--segmented-hover);
+  --color-tab-pill-track: var(--tab-pill-track);
+  --color-tab-pill-thumb: var(--tab-pill-thumb);
+  --color-tab-pill-fg: var(--tab-pill-fg);
+  --color-tab-pill-selected-fg: var(--tab-pill-selected-fg);
+  --color-tab-pill-hover: var(--tab-pill-hover);
+  --color-chip-neutral-bg: var(--chip-neutral-bg);
+  --color-chip-neutral-fg: var(--chip-neutral-fg);
+  --color-chip-info-bg: var(--chip-info-bg);
+  --color-chip-info-fg: var(--chip-info-fg);
+  --color-chip-success-bg: var(--chip-success-bg);
+  --color-chip-success-fg: var(--chip-success-fg);
+  --color-chip-accent-bg: var(--chip-accent-bg);
+  --color-chip-accent-fg: var(--chip-accent-fg);
+  --color-chip-warning-bg: var(--chip-warning-bg);
+  --color-chip-warning-fg: var(--chip-warning-fg);
+  --color-chip-danger-bg: var(--chip-danger-bg);
+  --color-chip-danger-fg: var(--chip-danger-fg);
+  --color-chip-danger-border: var(--chip-danger-border);
+  --color-field-border: var(--field-border);
+  --color-field-focus: var(--field-focus);
+  --color-field-placeholder: var(--field-placeholder);
+  --color-scrim: var(--scrim);
+}
+
+@utility duration-short {
+  transition-duration: var(--motion-duration-short);
+}
+
+@utility duration-medium {
+  transition-duration: var(--motion-duration-medium);
+}
+
+@utility duration-long {
+  transition-duration: var(--motion-duration-long);
+}
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* Breakpoints. MOBILE_MEDIA_QUERY (shared/hooks/dom.ts) must equal phone's. */
+@custom-variant phone (@media (max-width: 700px));
+@custom-variant above-phone (@media (min-width: 701px));
+@custom-variant tablet (@media (min-width: 701px) and (max-width: 1180px));
+@custom-variant desktop (@media (min-width: 1181px));
+
+/* Page-level stacking, lowest first; static so tooltips.css can read them.
+   Numbers inside one component (z-1, z-2) only order its own children. */
+@theme static {
+  --z-index-header: 20;
+  --z-index-drawer-scrim: 55;
+  --z-index-rail: 60;
+  --z-index-dialog-scrim: 70;
+  --z-index-dialog: 71;
+  --z-index-toast: 80;
+  --z-index-tooltip: 1000;
+}
+
+@theme {
+  /* MD3 bridge values are derived at runtime from the shared seed. */
+  --color-th-bg: var(--md-sys-color-background, hsl(0 0% 100%));
+  --color-th-fg: var(--md-sys-color-on-background, hsl(0 0% 3.9%));
+  --color-th-card: var(--md-sys-color-surface, hsl(0 0% 100%));
+  --color-th-card-fg: var(--md-sys-color-on-surface, hsl(0 0% 3.9%));
+  --color-th-popover: var(--md-sys-color-surface, hsl(0 0% 100%));
+  --color-th-popover-fg: var(--md-sys-color-on-surface, hsl(0 0% 3.9%));
+  --color-th-primary: var(--md-sys-color-primary, hsl(0 0% 9%));
+  --color-th-primary-fg: var(--md-sys-color-on-primary, hsl(0 0% 98%));
+  --color-th-secondary: var(
+    --md-sys-color-secondary-container,
+    hsl(0 0% 96.1%)
+  );
+  --color-th-secondary-fg: var(
+    --md-sys-color-on-secondary-container,
+    hsl(0 0% 9%)
+  );
+  --color-th-muted: var(--md-sys-color-surface-variant, hsl(0 0% 96.1%));
+  --color-th-muted-fg: var(--md-sys-color-on-surface-variant, hsl(0 0% 45.1%));
+  --color-th-accent: var(--md-sys-color-tertiary-container, hsl(0 0% 96.1%));
+  --color-th-accent-fg: var(--md-sys-color-on-tertiary-container, hsl(0 0% 9%));
+  --color-th-destructive: var(--md-sys-color-error, hsl(0 84.2% 60.2%));
+  --color-th-destructive-fg: var(--md-sys-color-on-error, hsl(0 0% 98%));
+  --color-th-border: var(--md-sys-color-outline-variant, hsl(0 0% 89.8%));
+  --color-th-input: var(--md-sys-color-outline, hsl(0 0% 89.8%));
+  --color-th-ring: var(--md-sys-color-primary, hsl(0 0% 3.9%));
+  /* MD3 has no success/warning role equivalents, so these retain separate
+     palettes. */
+  --color-th-success: hsl(142 71% 45%);
+  --color-th-success-fg: hsl(0 0% 100%);
+  --color-th-success-container: var(
+    --md-sys-color-secondary-container,
+    hsl(138 38% 93%)
+  );
+  --color-th-on-success-container: var(
+    --md-sys-color-on-secondary-container,
+    hsl(138 45% 20%)
+  );
+  --color-th-warning: hsl(38 92% 50%);
+  --color-th-warning-fg: hsl(0 0% 100%);
+  --color-th-warning-container: hsl(38 92% 92%);
+  --color-th-on-warning-container: hsl(38 92% 16%);
+  --color-th-destructive-container: var(
+    --md-sys-color-error-container,
+    hsl(0 84.2% 95.3%)
+  );
+  --color-th-destructive-on-container: var(
+    --md-sys-color-on-error-container,
+    hsl(0 84.2% 20%)
+  );
+  --color-th-info: hsl(199 89% 48%);
+  --color-th-info-fg: hsl(0 0% 100%);
+  --color-th-link: hsl(221 83% 53%);
+  --color-th-link-hover: hsl(221 83% 43%);
+
+  /* Named shell utilities share paired theme tokens rather than independently
+     declaring component colors. */
+  --color-cosci-fg: var(--cosci-text);
+  --color-cosci-bg: var(--cosci-bg);
+  --color-cosci-border: var(--cosci-border);
+  --color-cosci-muted: var(--cosci-muted);
+  --color-cosci-panel: var(--cosci-panel);
+  --color-cosci-hover: var(--cosci-hover);
+  --color-cosci-blue: var(--cosci-blue);
+  --color-cosci-blue-strong: var(--cosci-blue);
+  --color-cosci-teal-dark: var(--cosci-teal-dark);
+  --color-cosci-teal-bg: var(--cosci-teal-bg);
+  --color-cosci-composer-bg: var(--cosci-composer-bg);
+  --color-cosci-composer-border: var(--cosci-composer-border);
+  --color-cosci-composer-label: var(--cosci-muted);
+  --color-cosci-composer-text: var(--cosci-text);
+  --color-cosci-composer-submit: var(--cosci-composer-submit);
+  --color-cosci-composer-submit-disabled: var(--cosci-composer-submit-disabled);
+  --color-cosci-source-button: var(--cosci-muted);
+  --color-cosci-source-button-hover: var(--cosci-source-button-hover);
+  --color-cosci-icon-button-hover-bg: var(--cosci-icon-button-hover-bg);
+  --color-cosci-menu-bg: var(--cosci-menu-bg);
+  --color-cosci-menu-border: var(--cosci-border);
+  --color-cosci-menu-divider: var(--cosci-menu-divider);
+  --color-cosci-menu-icon: var(--cosci-muted);
+  --color-cosci-menu-text: var(--cosci-text);
+
+  --color-cosci-danger-bg: var(--cosci-danger-bg);
+  --color-cosci-danger-border: var(--cosci-danger-border);
+  --color-cosci-danger-fg: var(--cosci-danger-fg);
+  --color-cosci-attach-bg: var(--cosci-menu-row-hover);
+  --color-cosci-attach-fg: var(--cosci-text);
+  --color-cosci-attach-meta: var(--cosci-shell-icon);
+  --color-cosci-attach-badge: var(--cosci-attach-badge);
+  --color-cosci-attach-badge-fg: var(--cosci-attach-badge-fg);
+  --color-cosci-toast-bg: var(--cosci-toast-bg);
+  --color-cosci-toast-fg: var(--cosci-toast-fg);
+  --color-cosci-toast-action: var(--cosci-toast-action);
+  --color-cosci-surface-raised: var(--cosci-composer-bg);
+  --color-cosci-user-bubble-bg: var(--cosci-hover);
+  --color-cosci-user-bubble-hover: var(--cosci-user-bubble-hover);
+  --color-cosci-setup-doc-bg: var(--cosci-menu-row-hover);
+  --color-cosci-option-bg: var(--cosci-composer-bg);
+  --color-cosci-option-hover-bg: var(--cosci-hover);
+  --color-cosci-option-hover-border: var(--cosci-border);
+  --color-cosci-option-marker: var(--cosci-option-marker);
+  --color-cosci-option-marker-on: var(--cosci-blue);
+  --color-cosci-btn-primary-bg: var(--cosci-blue);
+  --color-cosci-btn-primary-fg: var(--cosci-btn-primary-fg);
+  --color-cosci-btn-primary-hover: var(--cosci-btn-primary-hover);
+  --color-cosci-btn-outline-border: var(--cosci-option-marker);
+  --color-cosci-btn-outline-fg: var(--cosci-blue);
+  --color-cosci-btn-outline-hover-bg: var(--cosci-btn-outline-hover-bg);
+  --color-cosci-btn-secondary-border: var(--cosci-btn-secondary-border);
+  --color-cosci-btn-secondary-fg: var(--cosci-source-button-hover);
+  --color-cosci-btn-secondary-hover-bg: var(--cosci-icon-button-hover-bg);
+  --color-cosci-btn-disabled-border: var(--cosci-border);
+  --color-cosci-btn-disabled-bg: var(--cosci-icon-button-hover-bg);
+  --color-cosci-btn-disabled-fg: var(--cosci-option-marker);
+  --color-cosci-toggle-on-track: var(--cosci-toggle-on-track);
+  --color-cosci-toggle-on-knob: var(--cosci-blue);
+  --color-cosci-toggle-off-track: var(--cosci-toggle-off-track);
+  --color-cosci-toggle-off-knob: var(--cosci-option-marker);
+  --color-cosci-accent: var(--cosci-accent);
+  --color-cosci-accent-fg: var(--cosci-accent-fg);
+  --color-cosci-recent-card-hover-bg: var(--cosci-recent-card-hover-bg);
+  --color-cosci-suggestion-bg: var(--cosci-suggestion-bg);
+  --color-cosci-step-line: var(--cosci-step-line);
+  --color-cosci-logs-accent-bg: var(--cosci-accent);
+  --color-cosci-logs-accent-fg: var(--cosci-accent-fg);
+  --color-cosci-recent-meta-bg: var(--cosci-menu-row-hover);
+  --color-cosci-shell-icon: var(--cosci-shell-icon);
+  --color-cosci-shell-hover-bg: var(--cosci-shell-hover-bg);
+  --color-cosci-rail: var(--cosci-rail);
+  --color-cosci-menu-row-hover: var(--cosci-menu-row-hover);
+  --color-cosci-selected-row-fg: var(--cosci-selected-row-fg);
+  --color-cosci-settings-segment-bg: var(--cosci-settings-segment-bg);
+  --color-cosci-settings-card-bg: var(--cosci-settings-card-bg);
+  --color-cosci-logs-accent-hover: var(--cosci-logs-accent-hover);
+  --color-cosci-logs-danger-bg: var(--cosci-danger-bg);
+  --color-cosci-logs-danger-fg: var(--cosci-danger-fg);
+  --color-cosci-reference-open-border: var(--cosci-border);
+  --color-cosci-reference-open-fg: var(--cosci-text);
+  --color-cosci-reference-open-hover-bg: var(--cosci-hover);
+  --color-cosci-reference-open-hover-border: var(--cosci-muted);
+
+  --color-cosci-idea-list-border: var(--cosci-border);
+  --color-cosci-idea-row-border: var(--cosci-border);
+  --color-cosci-idea-row-bg: var(--cosci-suggestion-bg);
+  --color-cosci-idea-row-text: var(--cosci-text);
+  --color-cosci-idea-row-hover-border: var(--cosci-border);
+  --color-cosci-idea-row-hover-bg: var(--cosci-panel);
+  --color-cosci-idea-row-selected-border: var(--cosci-blue);
+  --color-cosci-idea-row-selected-bg: var(--cosci-idea-row-selected-bg);
+  --color-cosci-idea-row-selected-hover-bg: var(--cosci-idea-row-selected-bg);
+  --color-cosci-idea-chip-bg: var(--cosci-idea-chip-bg);
+  --color-cosci-idea-chip-text: var(--cosci-text);
+  --color-cosci-idea-title-text: var(--cosci-text);
+  --color-cosci-idea-preview-text: var(--cosci-text);
+  --color-cosci-idea-breadcrumb-bg: var(--cosci-panel);
+  --color-cosci-idea-breadcrumb-text: var(--cosci-text);
+  --color-cosci-idea-detail-text: var(--cosci-text);
+
+  /* Elevation is reserved for overlays: menus and floating controls, then
+     toasts and dialogs. */
+  --shadow-floating: var(--md-elevation-2);
+  --shadow-overlay: var(--md-elevation-3);
+  --shadow-drawer: var(--drawer-shadow);
+  --shadow-card: var(--card-shadow);
+
+  --ease-standard: var(--motion-ease-standard);
+  --ease-enter: var(--motion-ease-enter);
+  --ease-exit: var(--motion-ease-exit);
+
+  --font-gsans: 'Google Sans', system-ui, sans-serif;
+  --font-gsans-text:
+    'Google Sans Text', 'Google Sans', 'Roboto', system-ui, sans-serif;
+
+  --radius: 0.5rem;
+
+  /* Shapes off the default scale: the user bubble, the workspace corner, and
+     the landing's tiles and hero block. */
+  --radius-bubble: 1.625rem;
+  --radius-workspace: 1.875rem;
+  --radius-tile: 1.125rem;
+  --radius-5xl: 3rem;
+}
+
+:root[data-theme='dark'] {
+  /* Dark surfaces reduce shadow contrast, requiring higher elevation
+     opacities. */
+  --md-elevation-2:
+    0 1px 2px 0 rgb(0 0 0 / 50%), 0 2px 6px 2px rgb(0 0 0 / 35%);
+  --md-elevation-3:
+    0 4px 8px 3px rgb(0 0 0 / 40%), 0 1px 3px 0 rgb(0 0 0 / 55%);
+  /* Status roles absent from MD3 need explicit paired dark values. */
+  --color-th-success: hsl(142 60% 48%);
+  --color-th-warning: hsl(38 90% 56%);
+  --color-th-warning-fg: hsl(222 22% 7%);
+  --color-th-warning-container: hsl(38 50% 12%);
+  --color-th-on-warning-container: hsl(38 60% 80%);
+  --color-th-info: hsl(199 80% 55%);
+  --color-th-info-fg: hsl(222 22% 7%);
+  --color-th-link: hsl(210 80% 70%);
+  --color-th-link-hover: hsl(210 90% 80%);
+  color-scheme: dark;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
+:root {
+  font-family:
+    'Google Sans Text', 'Google Sans', 'Roboto', system-ui, sans-serif;
+
+  /* Reserve elevation for floating overlays; cards and inputs use tonal
+     layers. */
+  --md-elevation-2:
+    0 1px 2px 0 rgb(0 0 0 / 30%), 0 2px 6px 2px rgb(0 0 0 / 15%);
+  --md-elevation-3:
+    0 4px 8px 3px rgb(0 0 0 / 15%), 0 1px 3px 0 rgb(0 0 0 / 30%);
+}
+
+/* Tabs reserve after for their underline; use before for state layers and
+   class selectors so anchors retain hover/focus styling. */
+.reference-report-tab {
+  position: relative;
+  transition: color var(--motion-duration-short) var(--motion-ease-standard);
+}
+
+.reference-report-tab::before {
+  content: '';
+  position: absolute;
+  inset: 0.3rem 0.6rem;
+  border-radius: 0.75rem;
+  background: currentColor;
+  opacity: 0;
+  transition: opacity var(--motion-duration-short) var(--motion-ease-standard);
+  pointer-events: none;
+}
+
+.reference-report-tab:hover::before {
+  opacity: 0.06;
+}
+
+.reference-report-tab:focus-visible::before {
+  opacity: 0.1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reference-report-tab,
+  .reference-report-tab::before {
+    transition: none;
+  }
+}
+
+/* iOS Safari zooms focused fields below 16px, leaving mobile layout displaced;
+   enforce that floor on touch devices. */
+@media (pointer: coarse) {
+  input:not([type='checkbox'], [type='radio'], [type='range']),
+  textarea,
+  select {
+    font-size: max(16px, 1em);
+  }
+}
+
+*,
+::before,
+::after {
+  box-sizing: border-box;
+}
+
+html {
+  background-color: var(--color-th-bg);
+  color: var(--color-th-fg);
+  line-height: 1.5;
+  overflow-x: hidden;
+  /* Phones must not rubber-band the page sideways. */
+  overscroll-behavior-x: none;
+  tab-size: 4;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background-color: var(--color-th-bg);
+  color: var(--color-th-fg);
+  margin: 0;
+}
+
+.public-prerender {
+  color: var(--cosci-text);
+}
+
+.public-prerender a {
+  color: var(--cosci-blue);
+}
+
+/* Do not add global margins/list resets or preflight: unclassed Goal Report
+   paragraphs/lists depend on browser spacing and markers. */
+@layer base {
+  button,
+  input,
+  select,
+  textarea {
+    color: inherit;
+    font: inherit;
+  }
+
+  * {
+    border-color: var(--color-th-border);
+  }
+}
+
+/* Do not set standard scrollbar-width/color: Chromium suppresses the webkit
+   pseudos when they are present. */
+*::-webkit-scrollbar {
+  width: 14px;
+  height: 14px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 9999px;
+  background: var(--cosci-scrollbar-thumb);
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--cosci-option-marker);
+  background-clip: padding-box;
+}
+
+/* Every keyboard-focused control shows a ring. Zero specificity, so a
+   component's own focus style replaces it; text entry keeps its field border. */
+@layer base {
+  :where(
+    :not(input, textarea, select, [contenteditable='true'])
+  ):focus-visible {
+    outline: 2px solid var(--color-th-ring);
+    outline-offset: 2px;
+  }
+}
+
+/* Controls ease between hover and focus states by default. It is a base
+   rule so a component's own transition utility can replace it. */
+@layer base {
+  button,
+  a,
+  summary,
+  [role='button'],
+  [role='tab'],
+  input,
+  select,
+  textarea {
+    transition-property:
+      background-color, border-color, color, box-shadow, opacity;
+    transition-duration: var(--motion-duration-short);
+    transition-timing-function: var(--motion-ease-standard);
+  }
+}
+
+/* Theme swaps suppress transitions until new styles are visible, avoiding
+   whole-page color animation. */
+.theme-switching *,
+.theme-switching *::before,
+.theme-switching *::after {
+  transition: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button,
+  a,
+  summary,
+  [role='button'],
+  [role='tab'],
+  input,
+  select,
+  textarea {
+    transition: none;
+  }
+}

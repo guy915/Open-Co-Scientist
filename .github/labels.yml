@@ -1,0 +1,75 @@
+- name: 'type: bug'
+  color: 'd73a4a'
+  description: Behavior is incorrect or unreliable.
+- name: 'type: feature'
+  color: 'a2eeef'
+  description: New product behavior or capability.
+- name: 'type: docs'
+  color: '0075ca'
+  description: Documentation, examples, or contributor guidance.
+- name: 'type: maintenance'
+  color: 'cfd3d7'
+  description: Refactoring, dependencies, or repository maintenance.
+- name: 'type: question'
+  color: 'd876e3'
+  description: A question requiring an answer or a decision.
+- name: 'area: api'
+  color: '1d76db'
+  description: HTTP API, application composition, and serving behavior.
+- name: 'area: engine'
+  color: '1d76db'
+  description: Scientific workflow, domains, and backend platform services.
+- name: 'area: frontend'
+  color: '1d76db'
+  description: Browser interface and frontend tooling.
+- name: 'area: mcp'
+  color: '1d76db'
+  description: Reference MCP service and its wire contract.
+- name: 'area: e2e'
+  color: '1d76db'
+  description: Isolated browser and built-asset checks.
+- name: 'area: evaluations'
+  color: '1d76db'
+  description: Offline evaluation harness and scientific benchmarks.
+- name: 'area: ci'
+  color: '1d76db'
+  description: GitHub workflows, checks, and repository tooling.
+- name: 'area: docs'
+  color: '1d76db'
+  description: Project documentation and release guidance.
+- name: 'priority: critical'
+  color: 'b60205'
+  description: Active outage, data loss, or a release-blocking defect.
+- name: 'priority: high'
+  color: 'd93f0b'
+  description: Significant defect or work needed for the next release.
+- name: 'priority: normal'
+  color: 'fbca04'
+  description: Planned work without immediate urgency.
+- name: 'priority: low'
+  color: 'c2e0c6'
+  description: Small improvement that can wait.
+- name: 'size: XS'
+  color: 'f9d0c4'
+  description: A few lines; under an hour.
+- name: 'size: S'
+  color: 'f9d0c4'
+  description: One small, contained change; a few hours.
+- name: 'size: M'
+  color: 'f9d0c4'
+  description: A focused change across a few files; about a day.
+- name: 'size: L'
+  color: 'f9d0c4'
+  description: A multi-file feature or refactor; several days.
+- name: 'size: XL'
+  color: 'f9d0c4'
+  description: Too large for one pull request; split into sub-issues first.
+- name: good first issue
+  color: '7057ff'
+  description: Bounded work with enough context for a new contributor.
+- name: help wanted
+  color: '008672'
+  description: Maintainer-reviewed work open to outside contributions.
+- name: needs triage
+  color: 'ededed'
+  description: Scope, reproduction, ownership, or priority needs review.

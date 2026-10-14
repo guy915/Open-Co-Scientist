@@ -10,7 +10,7 @@
   <a href="#how-a-run-works"><img src="docs/assets/badges/how-it-works-outline.svg" alt="How it works"/></a>
   <a href="CONTRIBUTING.md"><img src="docs/assets/badges/contribute-outline.svg" alt="Contribute"/></a>
   <a href="https://deepwiki.com/guy915/Open-Co-Scientist"><img src="docs/assets/badges/deepwiki-outline.svg" alt="DeepWiki"/></a>
-  <a href="https://doi.org/10.5281/zenodo.23366148"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.23366148.svg" alt="DOI 10.5281/zenodo.23366148"/></a>
+  <a href="https://doi.org/10.5281/zenodo.23366148"><img src="docs/assets/badges/zenodo-doi-outline.svg" alt="DOI 10.5281/zenodo.23366148"/></a>
 </p>
 
 <p align="center">

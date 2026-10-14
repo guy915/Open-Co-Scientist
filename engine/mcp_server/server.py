@@ -194,7 +194,7 @@ async def root() -> JSONResponse:
         {
             "status": "running",
             "service": "coscientist-lit-review",
-            "version": "0.1.0",
+            "version": "1.0.0",
             "mcp_tools": [name for _, name in _MCP_TOOLS],
             "api_keys_configured": {
                 "ENTREZ_EMAIL": entrez_email_present,

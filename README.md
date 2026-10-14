@@ -10,6 +10,7 @@
   <a href="#how-a-run-works"><img src="docs/assets/badges/how-it-works-outline.svg" alt="How it works"/></a>
   <a href="CONTRIBUTING.md"><img src="docs/assets/badges/contribute-outline.svg" alt="Contribute"/></a>
   <a href="https://deepwiki.com/guy915/Open-Co-Scientist"><img src="docs/assets/badges/deepwiki-outline.svg" alt="DeepWiki"/></a>
+  <a href="https://doi.org/10.5281/zenodo.23366148"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.23366148.svg" alt="DOI 10.5281/zenodo.23366148"/></a>
 </p>
 
 <p align="center">
@@ -155,6 +156,14 @@ Start with [CONTRIBUTING.md](CONTRIBUTING.md), and ask questions in
 [Discussions](https://github.com/guy915/Open-Co-Scientist/discussions).
 Everyone follows the [Code of Conduct](CODE_OF_CONDUCT.md). Report
 vulnerabilities privately as described in [SECURITY.md](SECURITY.md).
+
+## How to cite
+
+If Open Co-Scientist contributes to your work, cite the archived v1.0.0
+release: Guy Barel, *Open Co-Scientist* (version 1.0.0), Zenodo, 2026,
+[doi:10.5281/zenodo.23366148](https://doi.org/10.5281/zenodo.23366148).
+[CITATION.cff](CITATION.cff) holds the same metadata, and GitHub's
+**Cite this repository** menu exports it as APA or BibTeX.
 
 ## License and credit
 

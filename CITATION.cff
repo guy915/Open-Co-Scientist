@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+message: "If you use Open Co-Scientist, please cite this release."
+title: "Open Co-Scientist"
+abstract: "An open multi-agent research partner that turns a research goal into ranked, literature-grounded hypotheses."
+type: software
+authors:
+  - given-names: Guy
+    family-names: Barel
+version: 1.0.0
+doi: 10.5281/zenodo.23366148
+date-released: 2026-10-14
+license: Apache-2.0
+repository-code: "https://github.com/guy915/Open-Co-Scientist"
+url: "https://open-coscientist.com"

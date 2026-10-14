@@ -1,9 +1,10 @@
-"""Provider calls whose outcome this process does not know yet, per durable task.
+"""Provider calls with potentially billable unknown outcomes, per durable task.
 
 Graceful shutdown releases a task's lease only when none of its provider calls
 is unanswered: a call that was dispatched and never answered (timed out,
 cancelled, still streaming) may already have been billed, so its task keeps
-the lease and the unknown-outcome rule decides it after expiry.
+the lease and the unknown-outcome rule decides it after expiry. Proven-free
+failures carry no charge uncertainty and can release their accounting marks.
 """
 
 from __future__ import annotations
@@ -77,14 +78,21 @@ def task_scope(task_id: str) -> Iterator[None]:
 class CallMark:
     def __init__(self, task_id: str | None) -> None:
         self._task_id = task_id
-        self._answered = False
+        self._released = False
 
     def answered(self) -> None:
         """The provider responded (success or error), so its outcome is known."""
+        self._release()
+
+    def release_proven_zero_cost(self) -> None:
+        """A failed call proven free no longer blocks task recovery."""
+        self._release()
+
+    def _release(self) -> None:
         with _lock:
-            if self._answered:
+            if self._released:
                 return
-            self._answered = True
+            self._released = True
             task_id = self._task_id
             remaining = _unanswered.get(task_id, 0) - 1
             if remaining > 0:

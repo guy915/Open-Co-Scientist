@@ -8,7 +8,9 @@ vi.mock('./error_tracking', () => ({initErrorTracking: init}));
 
 afterEach(() => {
   cleanup();
-  document.head.querySelectorAll('script[data-cf-beacon]').forEach(node => node.remove());
+  document.head
+    .querySelectorAll('script[data-cf-beacon]')
+    .forEach(node => node.remove());
   vi.unstubAllEnvs();
   vi.clearAllMocks();
 });
@@ -48,14 +50,20 @@ it('adds the analytics beacon after the first view without loading error trackin
   vi.stubEnv('VITE_SENTRY_DSN', undefined);
   vi.stubEnv('VITE_CF_WEB_ANALYTICS_TOKEN', 'public-site-token');
   vi.resetModules();
-  const {BackgroundTelemetry, WEB_ANALYTICS_SRC} = await import('./background_telemetry');
+  const {BackgroundTelemetry, WEB_ANALYTICS_SRC} =
+    await import('./background_telemetry');
   schedule.mockImplementation(() => {});
   render(<BackgroundTelemetry />);
   expect(document.querySelector('script[data-cf-beacon]')).toBeNull();
   schedule.mock.calls[0][0]();
-  const script = document.querySelector<HTMLScriptElement>('script[data-cf-beacon]');
+  const script = document.querySelector<HTMLScriptElement>(
+    'script[data-cf-beacon]',
+  );
   expect(script?.src).toBe(WEB_ANALYTICS_SRC);
   expect(script?.defer).toBe(true);
-  expect(JSON.parse(script?.dataset.cfBeacon ?? '')).toEqual({token: 'public-site-token', spa: true});
+  expect(JSON.parse(script?.dataset.cfBeacon ?? '')).toEqual({
+    token: 'public-site-token',
+    spa: true,
+  });
   expect(init).not.toHaveBeenCalled();
 });

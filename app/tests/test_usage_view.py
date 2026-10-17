@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import sqlite3
+
 import pytest
 from co_scientist.api import usage_api
 from co_scientist.core.config import settings
@@ -11,18 +13,21 @@ _NOW = 20_000 * 86400 + 3600.0
 _OPERATOR = {"X-Logs-Token": "test-operator"}
 
 
-def _chat(conn: object, ident: str, client_id: str, at: float) -> None:
-    conn.execute(  # type: ignore[attr-defined]
+def _chat(conn: sqlite3.Connection, ident: str, client_id: str, at: float) -> None:
+    conn.execute(
         "INSERT INTO interviews (id, client_id, status, fields_json, created_at, updated_at)"
         " VALUES (?, ?, 'active', '{}', ?, ?)",
         (ident, client_id, at, at),
     )
 
 
-def _run(conn: object, ident: str, client_id: str, at: float, provider: str = "engine") -> None:
-    conn.execute(  # type: ignore[attr-defined]
+def _run(
+    conn: sqlite3.Connection, ident: str, client_id: str, at: float, provider: str = "engine"
+) -> None:
+    conn.execute(
         "INSERT INTO runs (id, research_goal, profile, status, provider, config_json,"
-        " client_id, created_at, updated_at) VALUES (?, 'g', 'express', 'queued', ?, '{}', ?, ?, ?)",
+        " client_id, created_at, updated_at)"
+        " VALUES (?, 'g', 'express', 'queued', ?, '{}', ?, ?, ?)",
         (ident, provider, client_id, at, at),
     )
 

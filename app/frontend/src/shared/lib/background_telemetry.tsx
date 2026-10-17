@@ -2,10 +2,12 @@ import {useEffect, useRef} from 'react';
 import {afterFirstView} from './after_first_view';
 
 const dsn = import.meta.env.VITE_SENTRY_DSN as string | undefined;
-const beaconToken = import.meta.env.VITE_CF_WEB_ANALYTICS_TOKEN as string | undefined;
+const beaconToken = import.meta.env.VITE_CF_WEB_ANALYTICS_TOKEN as
+  string | undefined;
 
 // Cookieless page-view counting; `_headers` allows exactly this origin.
-export const WEB_ANALYTICS_SRC = 'https://static.cloudflareinsights.com/beacon.min.js';
+export const WEB_ANALYTICS_SRC =
+  'https://static.cloudflareinsights.com/beacon.min.js';
 
 function loadWebAnalytics(token: string) {
   const script = document.createElement('script');

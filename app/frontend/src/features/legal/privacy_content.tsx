@@ -35,11 +35,10 @@ export function PrivacyContent() {
         <p>
           We also process feedback, technical error reports, request metadata,
           usage counters and aggregate page-view statistics to maintain the
-          service, investigate failures,
-          protect private work and prevent abuse. These purposes rely on our
-          legitimate interests in operating a secure, reliable service (Article
-          6(1)(f)). We limit diagnostic content and access. You may object to
-          processing based on legitimate interests.
+          service, investigate failures, protect private work and prevent abuse.
+          These purposes rely on our legitimate interests in operating a secure,
+          reliable service (Article 6(1)(f)). We limit diagnostic content and
+          access. You may object to processing based on legitimate interests.
         </p>
         <p>
           BYOK provider keys are saved in this browser and sent to our API when

@@ -681,7 +681,8 @@ personal data, medical records or credentials in research content.
 
 The application sets/reads no first-party cookies. All application storage
 supports requested functionality; there are no advertising/analytics storage
-keys. The landing trailer loads YouTube’s embedded player.
+keys. The Cloudflare Web Analytics beacon is cookieless and stores nothing.
+The landing trailer loads YouTube’s embedded player.
 
 | Location | Exact key or prefix | Purpose |
 | --- | --- | --- |

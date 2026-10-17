@@ -66,6 +66,22 @@ The API (`platform/telemetry/error_tracking.py`) reports unhandled exceptions an
 Only the Starlette and FastAPI integrations are on; Sentry's auto-enabled AI
 and HTTP-client integrations would attach prompts and model output.
 
+## Usage
+
+Two sources answer "how many people use it":
+
+- **Page views.** Cloudflare Web Analytics counts visits without cookies.
+  Create a site for `open-coscientist.com` under Analytics & Logs > Web
+  Analytics, then set its public token as `VITE_CF_WEB_ANALYTICS_TOKEN` in the
+  Worker's build variables. The frontend reads it at build time and loads the
+  beacon after the first view; unset, it loads nothing. `_headers` allows
+  `static.cloudflareinsights.com` (script) and `cloudflareinsights.com`
+  (reports).
+- **Product use.** `GET /api/usage?days=30` with `X-Logs-Token` returns
+  distinct browsers, chats started and runs created per UTC day, from the
+  `interviews` and `runs` tables. A browser is one ownership ID: a person on
+  two devices counts twice, and expired runs drop out under run retention.
+
 ## Tracing
 
 OpenTelemetry spans ([ADR-005](adr/005-tracing.md)) are exported only when

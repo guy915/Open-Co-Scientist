@@ -111,6 +111,14 @@ function exampleManifest() {
 
 function sourceLastmod(files, route) {
   try {
+    // A shallow clone reports its tip commit for every path, so only full
+    // history can date a route; otherwise keep the checked-in value.
+    const shallow = execFileSync(
+      'git',
+      ['rev-parse', '--is-shallow-repository'],
+      {cwd: repository, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore']},
+    ).trim();
+    if (shallow !== 'false') throw new Error('shallow history');
     const output = execFileSync(
       'git',
       ['log', '-1', '--format=%cs', '--', ...files],

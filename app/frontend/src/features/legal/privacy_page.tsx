@@ -15,7 +15,7 @@ export function PrivacyPage() {
         <Link to="/">Research workspace</Link>
       </nav>
       <h1 className="mt-6 text-3xl font-medium">Privacy notice</h1>
-      <p className="text-th-muted-fg">Updated · 12 October 2026</p>
+      <p className="text-th-muted-fg">Updated · 17 October 2026</p>
       <PrivacyContent />
     </article>
   );

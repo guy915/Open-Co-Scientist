@@ -33,8 +33,9 @@ export function PrivacyContent() {
           right to use.
         </p>
         <p>
-          We also process feedback, technical error reports, request metadata
-          and usage counters to maintain the service, investigate failures,
+          We also process feedback, technical error reports, request metadata,
+          usage counters and aggregate page-view statistics to maintain the
+          service, investigate failures,
           protect private work and prevent abuse. These purposes rely on our
           legitimate interests in operating a secure, reliable service (Article
           6(1)(f)). We limit diagnostic content and access. You may object to
@@ -86,6 +87,13 @@ export function PrivacyContent() {
           usage metadata. The current tracing destination reported by the owner
           is Honeycomb EU. Diagnostics must exclude research text, document
           text, email addresses and provider keys.
+        </p>
+        <p>
+          Cloudflare Web Analytics counts page views. Its script sets no cookies
+          and uses no browser storage. Cloudflare receives the page address,
+          referrer, browser type and connection metadata, and we see only
+          aggregate counts such as visits per day, top pages and countries.
+          Cloudflare keeps this data under its own retention policy.
         </p>
         <p>
           Hosting and diagnostic providers act as processors for their
@@ -209,7 +217,8 @@ export function PrivacyContent() {
           for your ownership ID, chosen appearance, BYOK keys and models,
           session view, diagnostic session anchor and safe retry/reload
           recovery. These support the functionality you request; there are no
-          application advertising or analytics storage keys.
+          application advertising or analytics storage keys, and the page-view
+          analytics script stores nothing in your browser.
         </p>
         <p>
           The website embeds the trailer through YouTube’s privacy-enhanced

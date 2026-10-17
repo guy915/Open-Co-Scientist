@@ -184,7 +184,7 @@ See the [MCP README](../engine/mcp_server/README.md) for service setup.
 
 | Controls | Meaning and reference |
 | --- | --- |
-| `VITE_API_BASE_URL`, `VITE_SENTRY_DSN`, `VITE_SENTRY_ENVIRONMENT`, `COSCI_FRONTEND_DIST` | Build-time API/error-tracking configuration and optional output directory; see [Frontend](../app/frontend/README.md) and [Monitoring](MONITORING.md). |
+| `VITE_API_BASE_URL`, `VITE_SENTRY_DSN`, `VITE_SENTRY_ENVIRONMENT`, `VITE_CF_WEB_ANALYTICS_TOKEN`, `COSCI_FRONTEND_DIST` | Build-time API/error-tracking/page-view analytics configuration and optional output directory; see [Frontend](../app/frontend/README.md) and [Monitoring](MONITORING.md). |
 | `COSCI_E2E_API_PORT`, `COSCI_E2E_UI_PORT`, `COSCI_E2E_STATE_DIR`, `COSCI_E2E_PRODUCTION`, `COSCI_E2E_BROWSER_SHARD`, `COSCI_E2E_CHROMIUM_EXECUTABLE`, `BUN` | Browser harness overrides; defaults use ports 8108/5273 and an isolated temporary database. See [E2E](../e2e/README.md). |
 | `FP_API`, `FP_ORIGIN`, `FP_PORT`, `FP_ROUTES`, `FP_CHROME`, `FP_TOOLS`, `FP_TLS_CERT`, `FP_TLS_KEY` | Local performance preview/measurement; default preview is 5273. See [Performance workflow](../app/frontend/scripts/performance/README.md). |
 | `FP_DEVICES`, `FP_SKIP_AUDITS` | Lighthouse devices default to `mobile,desktop`; a nonempty skip flag disables Lighthouse audits while keeping browser measurements. |

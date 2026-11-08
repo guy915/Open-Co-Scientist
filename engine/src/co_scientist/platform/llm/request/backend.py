@@ -39,6 +39,40 @@ async def _refuse_transport_replay(self: AsyncHTTPHandler, *_args: Any, **_kwarg
 AsyncHTTPHandler.single_connection_post_request = _refuse_transport_replay  # type: ignore[method-assign]
 
 
+def _has_async_litellm_callbacks() -> bool:
+    return bool(
+        litellm.callbacks
+        or litellm.success_callback
+        or litellm._async_success_callback
+        or litellm.service_callback
+    )
+
+
+def _install_logging_worker_guard() -> None:
+    """LiteLLM queues every async success handler on one process-global
+    worker task. The API loop and each run's worker-thread loop all call it,
+    so whichever loop calls last rebinds the worker and drops the other loop's
+    task while it still waits, and asyncio logs "Task was destroyed but it is
+    pending!". The app registers no LiteLLM callbacks, so the handler has
+    nothing to report: close it instead of queueing it. If a callback is ever
+    registered, the original worker runs unchanged.
+    """
+    from litellm.litellm_core_utils.logging_worker import GLOBAL_LOGGING_WORKER
+
+    original = GLOBAL_LOGGING_WORKER.ensure_initialized_and_enqueue
+
+    def enqueue(async_coroutine: Any) -> None:
+        if _has_async_litellm_callbacks():
+            original(async_coroutine)
+            return
+        async_coroutine.close()
+
+    GLOBAL_LOGGING_WORKER.ensure_initialized_and_enqueue = enqueue  # type: ignore[method-assign]
+
+
+_install_logging_worker_guard()
+
+
 def _is_transport_replay(error: BaseException) -> bool:
     pending = [error]
     seen: set[int] = set()

@@ -274,6 +274,24 @@ RUN_TIER_DEFAULTS: dict[str, dict[str, int]] = {
 }
 
 
+# Keyless free usage is a weighted daily budget (core/config
+# free_credits_per_day, default 11). One Ultra leaves room for two Express or
+# one Standard but not an Extended; one Extended leaves room for three Express
+# or two Standard; a second Ultra never fits. Weights grow slower than tier
+# compute; the operator spend caps stay the hard bound on cost.
+FREE_TIER_CREDITS: dict[str, int] = {
+    "express": 2,
+    DEFAULT_RUN_TIER: 3,
+    "extended": 5,
+    "ultra": 7,
+}
+
+
+def free_tier_credits(tier: str | None) -> int:
+    """Unknown tiers are charged as the largest so they never under-count."""
+    return FREE_TIER_CREDITS.get(tier or "", max(FREE_TIER_CREDITS.values()))
+
+
 def planning_limits(tier: str) -> dict[str, int]:
     defaults = RUN_TIER_DEFAULTS[tier]
     return {

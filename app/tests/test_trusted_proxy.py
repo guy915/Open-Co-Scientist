@@ -227,14 +227,14 @@ async def test_distinct_visitors_are_separate_in_actual_durable_host_admission(
     isolated_db: str,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr(settings, "free_runs_per_host_per_day", 1)
+    monkeypatch.setattr(settings, "free_credits_per_host_per_day", 3)
     first, _ = await _request("100.64.0.2", [(b"x-real-ip", b"198.51.100.9")])
     second, _ = await _request("100.64.0.2", [(b"x-real-ip", b"198.51.100.10")])
     for owner, scopes in (("first", first), ("second", second)):
         with transaction(isolated_db) as conn:
             peer = scopes[0]["client"]
             assert peer is not None
-            claim_run(conn, owner, owner, connecting_host(peer[0]), free=True)
+            claim_run(conn, owner, owner, connecting_host(peer[0]), free=3)
     with connect(isolated_db) as conn:
         rows = conn.execute("SELECT host FROM run_admissions").fetchall()
     assert len(rows) == 2
@@ -243,7 +243,7 @@ async def test_distinct_visitors_are_separate_in_actual_durable_host_admission(
     peer = repeated[0]["client"]
     assert peer is not None
     with transaction(isolated_db) as conn, pytest.raises(ProviderAdmissionError):
-        claim_run(conn, "repeat", "new-owner", connecting_host(peer[0]), free=True)
+        claim_run(conn, "repeat", "new-owner", connecting_host(peer[0]), free=3)
 
 
 @pytest.mark.parametrize(

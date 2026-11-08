@@ -35,27 +35,49 @@ def _create(
     )
 
 
-@pytest.mark.parametrize("overrides", [{"tier": "standard"}, {"max_iterations": 1}])
-def test_free_run_must_be_express_without_numeric_overrides(
-    real_backend: None, overrides: dict[str, Any]
-) -> None:
+def test_free_run_rejects_numeric_overrides(real_backend: None) -> None:
     with TestClient(app) as client:
-        response = _create(client, **overrides)
+        response = _create(client, max_iterations=1)
         assert response.status_code == 403
         assert client.get("/api/runs", headers=_CLIENT).json()["runs"] == []
 
 
 def test_free_runs_are_capped_per_day(real_backend: None) -> None:
     with TestClient(app) as client:
-        for _ in range(3):
+        for _ in range(5):
             assert _create(client).status_code == 200
         response = _create(client)
         assert response.status_code == 429
-        assert "3 free runs" in response.json()["detail"]
+        assert "used your free runs" in response.json()["detail"]
         runs = client.get("/api/runs", headers=_CLIENT).json()["runs"]
-        assert len(runs) == 3
+        assert len(runs) == 5
         other = _create(client, headers={"X-Client-ID": "another-device"})
         assert other.status_code == 200
+
+
+@pytest.mark.parametrize(
+    ("tiers", "refused"),
+    [
+        (["standard"] * 3 + ["express"], "express"),
+        (["extended"] * 2, "express"),
+        (["extended", "express", "express", "express"], "express"),
+        (["extended", "standard", "standard"], "express"),
+        (["ultra", "express", "express"], "express"),
+        (["ultra", "standard"], "extended"),
+        (["ultra"], "extended"),
+        (["ultra"], "ultra"),
+    ],
+)
+def test_free_credits_weight_each_tier(real_backend: None, tiers: list[str], refused: str) -> None:
+    with TestClient(app) as client:
+        for tier in tiers:
+            assert _create(client, tier=tier).status_code == 200
+        response = _create(client, tier=refused)
+        assert response.status_code == 429
+        usage = client.get("/api/free-usage", headers=_CLIENT).json()
+        costs = usage["costs"]
+        assert usage["used"] == sum(costs[tier] for tier in tiers)
+        assert usage["remaining"] < costs[refused]
 
 
 @pytest.mark.parametrize(

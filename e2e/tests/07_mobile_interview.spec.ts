@@ -32,7 +32,7 @@ for (const theme of ['light', 'dark']) {
 }
 
 for (const theme of ['light', 'dark']) {
-  test(`keyless plan keeps tier descriptions and disables paid tiers in ${theme}`, async ({page}) => {
+  test(`keyless plan keeps tier descriptions and shows free credit costs in ${theme}`, async ({page}) => {
     await page.setViewportSize({width: 1440, height: 1050});
     await page.addInitScript(mode => localStorage.setItem('cosci-theme', mode), theme);
     await page.route('**/api/interviews/plan-card', route => route.fulfill({json: {
@@ -42,11 +42,10 @@ for (const theme of ['light', 'dark']) {
       turns: [{id: 1, role: 'agent', content: 'The research plan is ready.', created_at: 2}],
     }}));
     await page.goto('/chats/plan-card');
-    await expect(page.getByRole('radio', {name: /Express/})).toBeEnabled();
-    for (const label of ['Standard', 'Extended', 'Ultra']) {
+    for (const [label, credits] of [['Express', 2], ['Standard', 3], ['Extended', 5], ['Ultra', 7]] as const) {
       const radio = page.getByRole('radio', {name: new RegExp(label)});
-      await expect(radio).toBeDisabled();
-      await expect(radio.locator('..')).toHaveCSS('opacity', '0.5');
+      await expect(radio).toBeEnabled();
+      await expect(radio.locator('..')).toContainText(`Uses ${credits} of your free daily credits.`);
     }
     await expect(page.getByText('Suitable for medium-sized research questions and experiments.')).toBeVisible();
     await expect(page.getByText('Title:', {exact: true})).toHaveCount(0);

@@ -30,6 +30,7 @@ from co_scientist.core import byok_scope
 from co_scientist.core.async_bridge import off_loop
 from co_scientist.core.config import byok_enabled
 from co_scientist.core.exceptions import ProviderAdmissionError
+from co_scientist.core.run_modes import free_tier_credits
 from co_scientist.domains.access.byok_models import (
     SUPERVISOR_MODEL_HEADER,
     WORKER_MODEL_HEADER,
@@ -337,10 +338,12 @@ async def _resolve_setup(
     settings = callbacks.resolve_run_settings(resolved_request, interview, byok)
     free = free_usage.applies(byok, settings.llm_backend)
     if free and resolved_request.tier is None:
-        resolved_request = resolved_request.model_copy(update={"tier": free_usage.FREE_TIER})
+        resolved_request = resolved_request.model_copy(
+            update={"tier": free_usage.FREE_DEFAULT_TIER}
+        )
         settings = callbacks.resolve_run_settings(resolved_request, interview, byok)
     if free:
-        free_usage_api.check_request(resolved_request, settings.run_mode)
+        free_usage_api.check_request(resolved_request)
         if deployment_routes_are_free():
             settings = settings._replace(config={**settings.config, ZERO_COST_CONFIG_KEY: True})
     routing = None
@@ -385,14 +388,15 @@ def _persist_setup_transaction(
             setup.settings,
             conn=conn,
         )
+        cost = free_tier_credits(setup.settings.run_mode) if setup.free_usage else 0
         if setup.free_usage:
-            free_usage.claim_free_run(conn, admission.owner, run.id)
+            free_usage.claim_free_run(conn, admission.owner, run.id, setup.settings.run_mode)
         claim_run(
             conn,
             run.id,
             admission.owner,
             connecting_host(request.client.host if request.client else None),
-            free=setup.free_usage,
+            free=cost,
         )
         if setup.routing is not None:
             admit_route(
@@ -417,7 +421,7 @@ def _persist_setup_transaction(
     except run_creation_receipts.StagedDocumentsUnavailableError as exc:
         raise HTTPException(status_code=404, detail="attached document not found") from exc
     except free_usage.FreeUsageExhaustedError as exc:
-        raise free_usage_api.exhausted_error() from exc
+        raise free_usage_api.exhausted_error(exc) from exc
     except ProviderAdmissionError as exc:
         raise HTTPException(status_code=429, detail=str(exc)) from exc
     return run, receipt

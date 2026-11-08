@@ -18,8 +18,9 @@ export interface FreeUsage {
   // Offline keyless runs incur no provider cost, so free limits are not
   // enforced.
   enforced: boolean;
-  tier: 'express';
-  // Free allowances are per UTC day; null denotes uncapped usage.
+  // Free credits each run type costs.
+  costs: Record<'express' | 'standard' | 'extended' | 'ultra', number>;
+  // Free allowances are credits per UTC day; null denotes uncapped usage.
   limit: number | null;
   used: number;
   remaining: number | null;

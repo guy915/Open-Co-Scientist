@@ -534,8 +534,8 @@ def _choices(scope: RoutingScope, path: str) -> tuple[Slot, ...]:
     if scope.run_id is None:
         return choices
     with connect(path) as conn:
-        run = conn.execute("SELECT profile FROM runs WHERE id=?", (scope.run_id,)).fetchone()
-    if run is None or run[0] != "express":
+        run = conn.execute("SELECT 1 FROM runs WHERE id=?", (scope.run_id,)).fetchone()
+    if run is None:
         raise ProviderAdmissionError(UNAVAILABLE)
     route = route_for_run(scope.run_id, path)
     if route is None:

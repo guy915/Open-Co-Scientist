@@ -585,10 +585,10 @@ def test_capacity_and_credit_notices_use_real_ledgers_and_never_invent_an_azure_
 ) -> None:
     fake_process_mode.online()
     client = make_client()
-    monkeypatch.setattr(settings, "free_runs_globally_per_day", 1)
+    monkeypatch.setattr(settings, "free_credits_globally_per_day", 3)
     with db.transaction() as conn:
         conn.execute(
-            "INSERT INTO run_admissions VALUES (?,?,?,?,1)",
+            "INSERT INTO run_admissions VALUES (?,?,?,?,3)",
             ("synthetic", "other", "peer", int(db.current_time() // 86400)),
         )
     notice = client.get("/api/launch-status").json()
@@ -596,7 +596,7 @@ def test_capacity_and_credit_notices_use_real_ledgers_and_never_invent_an_azure_
     assert notice["resumes_at"] == (int(db.current_time() // 86400) + 1) * 86400
     assert not notice["free_runs_allowed"]
     assert notice["byok_runs_allowed"]
-    monkeypatch.setattr(settings, "free_runs_globally_per_day", 20)
+    monkeypatch.setattr(settings, "free_credits_globally_per_day", 55)
     monkeypatch.setenv("LLM_AZURE_ENABLED", "1")
     monkeypatch.setenv("LLM_TOTAL_BUDGET_EUR", "1")
     monkeypatch.setenv("LLM_AZURE_EXPIRES_AT", "2100-01-01T00:00:00+00:00")

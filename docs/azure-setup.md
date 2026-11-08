@@ -1,8 +1,9 @@
 # Operator model credit setup
 
 Order: BYOK → free OpenRouter → direct Haiku subscriber credit → Azure →
-"No model is available right now". Operator runs are Express only; Standard and
-higher tiers require BYOK. No Mistral slot remains.
+"No model is available right now". Keyless operator runs may use any tier and
+spend weighted free credits (Express 2, Standard 3, Extended 5, Ultra 7); the
+Azure forecast scales with the tier's call ceiling. No Mistral slot remains.
 
 ## Portal steps
 

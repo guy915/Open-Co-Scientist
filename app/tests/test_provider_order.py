@@ -51,15 +51,17 @@ def _quote(run_id: str, amount: int = 60) -> SpendReservation:
     )
 
 
-def test_run_forecast_must_fit_and_standard_is_never_operator_funded(path: str) -> None:
+def test_run_forecast_must_fit_for_every_free_tier(path: str) -> None:
     first, second, standard = _run(path), _run(path), _run(path, "standard")
     with transaction(path) as conn:
         one = admit_route(conn, first, slots=("anthropic", "azure"), estimate=70, total=100)
         two = admit_route(conn, second, slots=("anthropic", "azure"), estimate=70, total=100)
         assert one.azure_allowed and not two.azure_allowed
         assert two.slot == "anthropic"
+        # Keyless free credits cover every tier; the forecast still has to fit.
         with pytest.raises(ProviderAdmissionError):
-            admit_route(conn, standard, slots=("azure",), estimate=1, total=100)
+            admit_route(conn, standard, slots=("azure",), estimate=31, total=100)
+        assert admit_route(conn, standard, slots=("azure",), estimate=30, total=100).azure_allowed
 
 
 def test_azure_only_run_is_refused_when_estimate_does_not_fit(path: str) -> None:

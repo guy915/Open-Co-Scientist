@@ -210,13 +210,13 @@ def test_continuation_allowances_span_distinct_runs(
 def test_continuations_charge_free_allowance_and_ignore_unstored_byok_headers(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    _limit(monkeypatch, "free_runs_per_day", 2)
+    _limit(monkeypatch, "free_credits_per_day", 7)
     client = make_client()
     run_id = _completed(client)
     with db.connect() as conn:
         conn.execute("UPDATE runs SET llm_backend='real' WHERE id=?", (run_id,))
         conn.execute(
-            "INSERT INTO free_run_usage VALUES (?,?,?)",
+            "INSERT INTO free_run_usage (run_id, client_id, created_at) VALUES (?,?,?)",
             (run_id, "pytest-default-client", db.current_time()),
         )
     assert (

@@ -50,8 +50,9 @@ class Settings(BaseSettings):
     human_corpus_client_bytes: int = Field(default=50 * 1024 * 1024, ge=1)
     human_corpus_host_bytes: int = Field(default=100 * 1024 * 1024, ge=1)
     human_corpus_global_bytes: int = Field(default=200 * 1024 * 1024, ge=1)
-    free_runs_per_host_per_day: int = Field(default=6, ge=1)
-    free_runs_globally_per_day: int = Field(default=20, ge=1)
+    # Free caps are in credits (core/run_modes FREE_TIER_CREDITS; Express = 2).
+    free_credits_per_host_per_day: int = Field(default=22, ge=1)
+    free_credits_globally_per_day: int = Field(default=55, ge=1)
     concurrent_runs_per_host: int = Field(default=10, ge=1)
     continuations_per_run_per_day: int = Field(default=3, ge=1)
     continuations_per_client_per_day: int = Field(default=8, ge=1)
@@ -119,8 +120,9 @@ class Settings(BaseSettings):
     sentry_alert_organization: str = Field(default="", pattern=r"^(?:[a-z0-9][a-z0-9-]*)?$")
     sentry_alert_client_secret: SecretStr = SecretStr("")
     honeycomb_marker_api_key: SecretStr = SecretStr("")
-    # Removing the daily cap does not remove the free express-only envelope.
-    free_runs_per_day: int = 3
+    # Weighted daily credits per browser; 0 removes the per-browser cap but not
+    # the host and global caps.
+    free_credits_per_day: int = 11
 
     # Hermetic tests select deterministic entailment; production defaults to
     # semantic assessment.

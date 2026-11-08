@@ -142,7 +142,7 @@ def test_free_host_allowance_survives_owner_rotation_and_run_deletion(
     fake_process_mode: FakeProcessMode,
 ) -> None:
     fake_process_mode.online()
-    monkeypatch.setattr(settings, "free_runs_per_host_per_day", 1)
+    monkeypatch.setattr(settings, "free_credits_per_host_per_day", 3)
 
     async def no_title(goal: str) -> None:
         return None

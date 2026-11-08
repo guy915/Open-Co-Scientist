@@ -71,14 +71,16 @@ def claim_session(conn: sqlite3.Connection, owner: str, host: str, day: int) -> 
     conn.execute("INSERT INTO anonymous_admissions VALUES (?,?,?)", (day, host, owner))
 
 
-def claim_run(conn: sqlite3.Connection, run_id: str, owner: str, host: str, *, free: bool) -> None:
+def claim_run(conn: sqlite3.Connection, run_id: str, owner: str, host: str, *, free: int) -> None:
+    """``free`` is the run's weighted free credits; 0 marks a keyed run."""
     from co_scientist.core.config import settings
 
     day = utc_day(current_time())
     claim_session(conn, owner, host, day)
     total, same_host, free_total, free_host = conn.execute(
         "SELECT COUNT(*),COALESCE(SUM(host=?),0),COALESCE(SUM(free),0),"
-        "COALESCE(SUM(free AND host=?),0) FROM run_admissions WHERE day=?",
+        "COALESCE(SUM(CASE WHEN host=? THEN free ELSE 0 END),0) "
+        "FROM run_admissions WHERE day=?",
         (host, host, day),
     ).fetchone()
     if (
@@ -87,8 +89,8 @@ def claim_run(conn: sqlite3.Connection, run_id: str, owner: str, host: str, *, f
         or (
             free
             and (
-                free_total >= settings.free_runs_globally_per_day
-                or free_host >= settings.free_runs_per_host_per_day
+                free_total + free > settings.free_credits_globally_per_day
+                or free_host + free > settings.free_credits_per_host_per_day
             )
         )
     ):
@@ -281,14 +283,24 @@ def claim_continuation(
     if any(count >= limit for count, limit in zip(counts, limits, strict=True)):
         raise ProviderAdmissionError("daily continuation admission exhausted")
     key = f"{prefix}{input_id}"
+    cost = 0
     if free:
+        # Lazy like settings: run_modes loads config, which live evals import later.
+        from co_scientist.core.run_modes import free_tier_credits
+
+        tier = conn.execute("SELECT profile FROM runs WHERE id=?", (run_id,)).fetchone()
+        cost = free_tier_credits(tier[0] if tier else None)
         used = conn.execute(
-            "SELECT COUNT(*) FROM free_run_usage WHERE client_id=? AND created_at>=?",
+            "SELECT COALESCE(SUM(credits),0) FROM free_run_usage "
+            "WHERE client_id=? AND created_at>=?",
             (owner, day * UTC_DAY_SECONDS),
         ).fetchone()[0]
-        if settings.free_runs_per_day > 0 and used >= settings.free_runs_per_day:
+        if settings.free_credits_per_day > 0 and used + cost > settings.free_credits_per_day:
             raise ProviderAdmissionError("daily free run admission exhausted")
     # A continuation consumes the shared run envelope, even if its original run is old.
-    claim_run(conn, key, owner, host, free=free)
+    claim_run(conn, key, owner, host, free=cost)
     if free:
-        conn.execute("INSERT INTO free_run_usage VALUES (?,?,?)", (key, owner, current_time()))
+        conn.execute(
+            "INSERT INTO free_run_usage (run_id, client_id, created_at, credits) VALUES (?,?,?,?)",
+            (key, owner, current_time(), cost),
+        )

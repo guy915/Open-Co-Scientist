@@ -92,7 +92,7 @@ names) are in backticks and never change without a migration.
 | Offline backend | The deterministic, schema-valid stand-in for real model calls. |
 | Surface | A non-run caller of the gateway (chat, interview, Q&A) with its own call cap. |
 | BYOK | Bring your own key: a scientist's provider credential, encrypted per run. |
-| Free allowance | The daily number of free runs per owner, per host and in total. |
+| Free allowance | The daily free credits per owner, per host and in total; each run tier costs credits (Express 2, Standard 3, Extended 5, Ultra 7). |
 | Owner / principal | The client identity that owns runs and chats. |
 | Retrieval | Literature and web search through the MCP server, fused and ranked. |
 | MCP server | The separate literature-tool service; shares only its wire contract with the app. |

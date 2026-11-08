@@ -560,7 +560,10 @@ def _turn_response(
     earlier answers.
     """
     if fields is None:
-        logger.warning("Interview turn carried no usable spec block; keeping fields")
+        logger.warning(
+            "Interview turn carried no usable spec block; keeping fields",
+            extra={"diagnostic_event": "interview.state_missing"},
+        )
         return {
             "assistant_message": prose,
             **dict(interview["fields"]),

@@ -96,6 +96,7 @@ async def _build_and_gate_report(
         logger.warning(
             "Report finalize withheld for run %s by the final safety gate.",
             run_id,
+            extra={"diagnostic_event": "report.withheld"},
         )
     return built, blocked, gate_events
 
@@ -108,6 +109,7 @@ def _redacted_report(built: _BuiltReport, decision: SafetyDecision) -> _BuiltRep
     logger.warning(
         "Redacting %d matched span(s) from the report under the final safety gate.",
         len(matches),
+        extra={"diagnostic_event": "report.redacted"},
     )
     return _BuiltReport(
         payload=redact_payload_text(built.payload, matches),

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import gc
+import inspect
 import logging
 import threading
 from typing import Any
@@ -68,5 +69,5 @@ def test_without_callbacks_the_handler_is_closed_not_queued() -> None:
 
     coroutine = handler()
     GLOBAL_LOGGING_WORKER.ensure_initialized_and_enqueue(coroutine)
-    assert coroutine.cr_frame is None  # closed
+    assert inspect.getcoroutinestate(coroutine) == inspect.CORO_CLOSED
     assert GLOBAL_LOGGING_WORKER._worker_task is None

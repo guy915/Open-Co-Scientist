@@ -72,7 +72,11 @@ def normalized_questions(raw: Any) -> list[dict[str, Any]]:
     if offered and not questions:
         # Invalid options are logged because otherwise lost prose questions are
         # invisible to operators.
-        logger.warning("Interview turn offered %d question(s), none usable", len(offered))
+        logger.warning(
+            "Interview turn offered %d question(s), none usable",
+            len(offered),
+            extra={"diagnostic_event": "interview.question_unusable"},
+        )
     return questions[:MAX_QUESTIONS]
 
 

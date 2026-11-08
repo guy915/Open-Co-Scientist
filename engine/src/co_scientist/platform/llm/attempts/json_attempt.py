@@ -136,6 +136,7 @@ def _validation_failure(
         " after repair" if repaired else "",
         attempt.number,
         error.message,
+        extra={"diagnostic_event": "schema_retry"},
     )
     feedback = None if attempt.is_final else _validation_feedback(error)
     return Rejected(error, response_text, feedback)

@@ -176,6 +176,13 @@ This project builds on Google's AI co-scientist research:
 - Gottweis et al., [Towards an AI co-scientist](https://arxiv.org/abs/2502.18864), 2025.
 - [Accelerating scientific discovery with Co-Scientist](https://doi.org/10.1038/s41586-026-10644-y), *Nature*, 2026.
 
+Much of the web app's interface is modelled on Google's
+[Idea Generation agent](https://cloud.google.com/blog/products/ai-machine-learning/google-agentspace-enables-the-agent-driven-enterprise)
+in Google Agentspace, now the
+[Co-Scientist agent](https://docs.cloud.google.com/gemini/enterprise/docs/co-scientist-and-alphaevolve)
+in Gemini Enterprise. The layout, flow and visual style follow that product;
+the code is independent work.
+
 It also draws on [Science Skills](https://github.com/google-deepmind/science-skills)
 (vendored under `vendor/`), [Jataware's open-coscientist](https://github.com/jataware/open-coscientist),
 [Sakana AI's AI Scientist](https://github.com/SakanaAI/AI-Scientist) and

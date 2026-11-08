@@ -37,6 +37,13 @@ _DIAGNOSTIC_EVENTS = frozenset(
         "citation.grounding",
         "citation_audit",
         "schema_degraded",
+        # Named warnings, so operators can group them without the text.
+        "interview.state_missing",
+        "interview.question_unusable",
+        "schema_retry",
+        "claim_gate.unverified",
+        "report.redacted",
+        "report.withheld",
     }
 )
 

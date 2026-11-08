@@ -56,7 +56,7 @@ _LOGGABLE_FAILURE_CLASSES = frozenset(
 )
 
 
-def _http_status(exc: BaseException) -> int | None:
+def http_status(exc: BaseException) -> int | None:
     candidates = (
         getattr(exc, "code", None),
         getattr(getattr(exc, "response", None), "status_code", None),
@@ -74,5 +74,5 @@ def _http_status(exc: BaseException) -> int | None:
 def failure_summary(exc: BaseException) -> str:
     name = type(exc).__name__
     summary = name if name in _LOGGABLE_FAILURE_CLASSES else "other error"
-    status = _http_status(exc)
+    status = http_status(exc)
     return f"{summary}, HTTP {status}" if status is not None else summary

@@ -504,6 +504,7 @@ def _log_gate_outcome(blocked_count: int, unverified_count: int, gated_count: in
         logger.warning(
             "No hypothesis cleared the claim gate: all %s published unverified",
             gated_count,
+            extra={"diagnostic_event": "claim_gate.unverified"},
         )
         return
     logger.info(

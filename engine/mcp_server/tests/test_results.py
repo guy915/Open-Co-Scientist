@@ -87,6 +87,33 @@ async def test_an_unknown_gene_symbol_is_an_empty_answer_not_a_failure(
     assert result.data == {"status": "ok", "records": []}
 
 
+async def test_ensembls_400_for_an_unknown_symbol_is_an_empty_answer(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Ensembl answers an unknown symbol with 400 "No valid lookup found".
+    requests = transport_responses(
+        monkeypatch, httpx.Response(400, json={"error": "No valid lookup found"})
+    )
+
+    async with registered_tools() as client:
+        result = await client.call_tool("search_ensembl_gene", {"query": "TP53 signalling/x"})
+
+    assert result.data == {"status": "ok", "records": []}
+    # The symbol stays one path segment.
+    assert requests[0].url.raw_path.endswith(b"/homo_sapiens/TP53%20signalling%2Fx")
+
+
+async def test_a_protein_string_cannot_map_is_an_empty_answer(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    transport_responses(monkeypatch, httpx.Response(404, json=[{"Error": "not found"}]))
+
+    async with registered_tools() as client:
+        result = await client.call_tool("search_string_interactions", {"query": "NOTAGENE"})
+
+    assert result.data == {"status": "ok", "records": []}
+
+
 async def test_openalex_failure_is_an_explicit_failed_result(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

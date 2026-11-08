@@ -12,7 +12,7 @@ from mcp_server.entrez import (
     entrez_worker,
     read_entrez_bytes,
 )
-from mcp_server.log_privacy import failure_summary
+from mcp_server.log_privacy import failure_summary, http_status
 from mcp_server.pmc_articles import split_pmc_articles, unavailable_pmc_ids
 from mcp_server.pubmed_client import (
     MAX_FULLTEXT_PAPERS,
@@ -47,6 +47,12 @@ def _is_valid_pubmed_id(value: str) -> bool:
     except ValueError:
         return False
     return True
+
+
+def _rejected_request(exc: BaseException) -> bool:
+    """Throttling (429) is an outage-like answer; other 4xx reject the request."""
+    status = http_status(exc)
+    return status is not None and 400 <= status < 500 and status != 429
 
 
 class PubmedSource(_EntrezClient):
@@ -174,6 +180,16 @@ class PubmedSource(_EntrezClient):
                 response = entrez_call(Entrez.efetch, db="pmc", id=",".join(batch), rettype="xml")
                 body = read_entrez_bytes(response).decode("utf-8")
             except Exception as exc:
+                if len(batch) > 1 and _rejected_request(exc):
+                    # A 4xx answer rejects this request, not the service: one
+                    # ID can spoil the batch, so the rest are still worth a try.
+                    logger.warning(
+                        "PMC rejected a batch of %s (%s); fetching each alone",
+                        len(batch),
+                        failure_summary(exc),
+                    )
+                    found.update(self._download_pmc_fulltexts_alone(batch))
+                    continue
                 logger.error(
                     "PMC fulltext batch of %s failed (%s)", len(batch), failure_summary(exc)
                 )
@@ -185,11 +201,11 @@ class PubmedSource(_EntrezClient):
                 logger.warning("PMC has no full text for %s articles", len(unavailable))
             missing = [p for p in batch if p not in articles and p not in unavailable]
             if missing:
+                logger.warning("PMC batch left %s articles out; fetching them alone", len(missing))
                 found.update(self._download_pmc_fulltexts_alone(missing))
         return found
 
     def _download_pmc_fulltexts_alone(self, pmc_ids: list[str]) -> dict[str, str]:
-        logger.warning("PMC batch left %s articles out; fetching them alone", len(pmc_ids))
         found: dict[str, str] = {}
         for pmc_id in pmc_ids:
             try:

@@ -14,6 +14,7 @@ from co_scientist.core.config import (
 )
 from co_scientist.core.prompt_cache import CacheablePrompt
 from co_scientist.domains.chat.interviews.output import InterviewProse
+from co_scientist.domains.chat.interviews.state_repair import repair_turn_state
 from co_scientist.domains.chat.titles import title_case
 from co_scientist.domains.documents import repository as store
 from co_scientist.platform.llm import coerce_json_list
@@ -559,7 +560,10 @@ def _turn_response(
     earlier answers.
     """
     if fields is None:
-        logger.warning("Interview turn carried no usable spec block; keeping fields")
+        logger.warning(
+            "Interview turn carried no usable spec block; keeping fields",
+            extra={"diagnostic_event": "interview.state_missing"},
+        )
         return {
             "assistant_message": prose,
             **dict(interview["fields"]),
@@ -583,6 +587,10 @@ async def _call_interview_model(
         raise InterviewModelUnavailableError(
             "The interview Agent is temporarily unavailable."
         ) from exc
+    if fields is None and prose.strip():
+        fields = await repair_turn_state(interview, prose)
+        if fields is not None:
+            logger.info("Recovered a missing interview state block from the turn")
     return _turn_response(interview, prose, fields)
 
 

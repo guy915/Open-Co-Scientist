@@ -66,15 +66,22 @@ def normalized_questions(raw: Any) -> list[dict[str, Any]]:
         logger.warning("Interview questions block is not a list; dropping it")
         return []
     questions = [q for q in map(_normalized_question, raw) if q]
-    if raw and not questions:
+    # Repair answers "the turn asks nothing" with an empty question; that is
+    # not an offered question and must not raise a warning.
+    offered = [q for q in raw if not _is_empty_question(q)]
+    if offered and not questions:
         # Invalid options are logged because otherwise lost prose questions are
         # invisible to operators.
-        logger.warning("Interview turn offered %d question(s), none usable", len(raw))
+        logger.warning("Interview turn offered %d question(s), none usable", len(offered))
     return questions[:MAX_QUESTIONS]
 
 
+def _is_empty_question(raw: Any) -> bool:
+    return isinstance(raw, dict) and not _text(raw.get("question")) and not raw.get("options")
+
+
 # Repair recovers an existing question; it must never invent one.
-_QUESTION_SCHEMA = obj(
+QUESTION_SCHEMA = obj(
     {
         "header": {"type": "string"},
         "question": {"type": "string"},
@@ -131,7 +138,7 @@ async def repair_questions(message: str) -> list[dict[str, Any]]:
         model_name=model,
         max_tokens=_MAX_TOKENS,
         temperature=0,
-        json_schema=_QUESTION_SCHEMA,
+        json_schema=QUESTION_SCHEMA,
         api_key=api_key,
     )
     try:

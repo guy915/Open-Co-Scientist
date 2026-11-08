@@ -1,5 +1,6 @@
 import {useEffect, useRef} from 'react';
 import {afterFirstView} from './after_first_view';
+import {loadChunk} from './load_chunk';
 
 const dsn = import.meta.env.VITE_SENTRY_DSN as string | undefined;
 const beaconToken = import.meta.env.VITE_CF_WEB_ANALYTICS_TOKEN as
@@ -25,8 +26,8 @@ export function BackgroundTelemetry() {
     afterFirstView(() => {
       if (beaconToken) loadWebAnalytics(beaconToken);
       if (dsn) {
-        void import('./error_tracking').then(({initErrorTracking}) =>
-          initErrorTracking(dsn),
+        void loadChunk(() => import('./error_tracking')).then(
+          ({initErrorTracking}) => initErrorTracking(dsn),
         );
       }
     });

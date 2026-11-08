@@ -68,6 +68,26 @@ describe('error logging', () => {
     uninstall();
   });
 
+  it('ignores the Outlook link scanner rejection but keeps real ones', () => {
+    const uninstall = installUiErrorLogging();
+    const reject = (reason: string) => {
+      const event = new Event('unhandledrejection');
+      Object.assign(event, {reason});
+      window.dispatchEvent(event);
+    };
+    reject('Object Not Found Matching Id:3, MethodName:update, ParamCount:4');
+    expect(logsApiMock.postAppLogs).not.toHaveBeenCalled();
+    reject('Error: real failure');
+    expect(logsApiMock.postAppLogs).toHaveBeenCalledWith([
+      {
+        message: 'unhandled rejection: Error: real failure',
+        level: 'error',
+        logger: 'error',
+      },
+    ]);
+    uninstall();
+  });
+
   it('stops persisting after uninstall', () => {
     const uninstall = installUiErrorLogging();
     uninstall();

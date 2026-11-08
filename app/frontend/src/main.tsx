@@ -16,6 +16,7 @@ import {
 } from '@/shared/lib/ui_logging';
 import {WorkbenchApp} from '@/app/workbench_app';
 import {BackgroundTelemetry} from '@/shared/lib/background_telemetry';
+import {installTranslateGuard} from '@/shared/lib/translate_guard';
 import {
   readStorage,
   STORAGE_KEYS,
@@ -27,6 +28,7 @@ import {
 installUiErrorLogging();
 installUiInteractionLogging();
 installDiagnosticLogging();
+installTranslateGuard();
 
 // A deploy deletes the old hashed chunks; reload once to fetch the new index.
 // The timestamp guard stops a reload loop if the chunk is genuinely missing.

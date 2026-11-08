@@ -1,7 +1,10 @@
 import {lazy, memo, Suspense, useEffect, useRef, useState} from 'react';
+import {loadChunk} from '@/shared/lib/load_chunk';
 
 const HomeLanding = lazy(() =>
-  import('./home_landing').then(module => ({default: memo(module.default)})),
+  loadChunk(() => import('./home_landing')).then(module => ({
+    default: memo(module.default),
+  })),
 );
 
 export function DeferredHomeLanding() {

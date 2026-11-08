@@ -171,6 +171,12 @@ export function installUiInteractionLogging(): () => void {
 // layout; suppress only these notices, never real callback exceptions.
 const BENIGN_ERROR_PATTERN = /^(Uncaught )?ResizeObserver loop /;
 
+// Microsoft's Outlook link scanner (Safe Links) opens shared links in a
+// headless browser whose own injected bridge rejects with this text. It is
+// not a visitor and not our code.
+const LINK_SCANNER_REJECTION =
+  /^Object Not Found Matching Id:\d+, MethodName:\w+, ParamCount:\d+$/;
+
 export function installUiErrorLogging(): () => void {
   function onError(event: ErrorEvent) {
     if (BENIGN_ERROR_PATTERN.test(event.message)) return;
@@ -182,6 +188,7 @@ export function installUiErrorLogging(): () => void {
 
   function onRejection(event: Event) {
     const {reason} = event as Event & {reason?: unknown};
+    if (LINK_SCANNER_REJECTION.test(String(reason))) return;
     logUiError(`unhandled rejection: ${String(reason)}`);
   }
 

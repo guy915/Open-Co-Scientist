@@ -14,6 +14,7 @@ import {fromMarkdown} from 'mdast-util-from-markdown';
 import {gfm} from 'micromark-extension-gfm';
 import {gfmFromMarkdown} from 'mdast-util-gfm';
 import {ExternalLink} from './external_link';
+import {loadChunk} from '@/shared/lib/load_chunk';
 
 const REMARK_PLUGINS = [remarkGfm];
 
@@ -21,7 +22,7 @@ const REMARK_PLUGINS = [remarkGfm];
 const REHYPE_PLUGINS = [rehypeSafeSubSup, rehypeHighlightKnownLanguages];
 
 const MarkdownMath = lazy(() =>
-  import('./markdown_math').then(module => ({
+  loadChunk(() => import('./markdown_math')).then(module => ({
     default: module.MarkdownMathRenderer,
   })),
 );

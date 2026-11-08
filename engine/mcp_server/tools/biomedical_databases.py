@@ -2,6 +2,7 @@ import logging
 import re
 from datetime import datetime, timezone
 from typing import Any, TypedDict, Unpack
+from urllib.parse import quote
 
 import httpx
 
@@ -233,11 +234,13 @@ async def search_ensembl_gene(query: str, max_results: int = 1) -> dict[str, Any
     del max_results
     try:
         gene = await _get_json(
-            f"{_ENSEMBL_URL}/{query}",
+            f"{_ENSEMBL_URL}/{quote(query.strip(), safe='')}",
             headers={"Content-Type": "application/json"},
         )
     except (httpx.HTTPError, ValueError) as exc:
-        if isinstance(exc, httpx.HTTPStatusError) and exc.response.status_code == 404:
+        # Ensembl answers an unknown symbol with 400 "No valid lookup found",
+        # not 404: both mean no match, not a failed source.
+        if isinstance(exc, httpx.HTTPStatusError) and exc.response.status_code in (400, 404):
             return ok([])
         logger.warning("Ensembl lookup failed (%s)", failure_summary(exc))
         return failed(exc)
@@ -361,6 +364,9 @@ async def search_string_interactions(query: str, max_results: int = 10) -> dict[
     try:
         partners = await _get_json(_STRING_URL, params=params)
     except (httpx.HTTPError, ValueError) as exc:
+        # STRING answers an identifier it cannot map with 404: no match.
+        if isinstance(exc, httpx.HTTPStatusError) and exc.response.status_code == 404:
+            return ok([])
         logger.warning("STRING lookup failed (%s)", failure_summary(exc))
         return failed(exc)
     records = [

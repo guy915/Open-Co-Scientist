@@ -173,6 +173,34 @@ def test_a_failed_batch_is_logged_once_and_not_retried_article_by_article(
     assert "batch of 2 failed" in caplog.text
 
 
+@pytest.mark.parametrize(("status", "retried"), [(400, True), (429, False), (503, False)])
+def test_only_a_rejected_batch_is_retried_article_by_article(
+    monkeypatch: pytest.MonkeyPatch, status: int, retried: bool
+) -> None:
+    from urllib.error import HTTPError
+
+    requests: list[str] = []
+
+    def efetch(**kwargs: Any) -> BytesIO:
+        ids = str(kwargs["id"])
+        requests.append(ids)
+        if "," in ids or ids == "930":
+            raise HTTPError("https://eutils", status, "rejected", {}, None)  # type: ignore[arg-type]
+        return BytesIO(_articleset(_article(ids)))
+
+    install_entrez(monkeypatch, efetch=efetch)
+
+    found = PubmedSource(Path())._download_pmc_fulltexts(["910", "930"])
+
+    if retried:
+        # One bad ID no longer costs the other article its full text.
+        assert requests == ["910,930", "910", "930"]
+        assert set(found) == {"910"}
+    else:
+        assert requests == ["910,930"]
+        assert found == {}
+
+
 def _pubmed_article(paper_id: str) -> dict[str, Any]:
     return {
         "PubmedArticle": [

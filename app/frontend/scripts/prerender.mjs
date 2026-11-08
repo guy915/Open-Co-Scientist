@@ -203,11 +203,15 @@ function renderRoute(route) {
   }
 
   if (route.jsonLd) {
-    const jsonLd = JSON.stringify(route.jsonLd).replaceAll('</', '<\\/');
-    html = html.replace(
-      '</head>',
-      `<script type="application/ld+json">${jsonLd}</script></head>`,
-    );
+    // One object per script: Safari's page parser reads a top-level array's
+    // missing "@context" and throws on every load of the page.
+    const scripts = route.jsonLd
+      .map(
+        item =>
+          `<script type="application/ld+json">${JSON.stringify(item).replaceAll('</', '<\\/')}</script>`,
+      )
+      .join('');
+    html = html.replace('</head>', `${scripts}</head>`);
   }
   if (route.content !== undefined) return replaceRoot(html, route.content);
   if (route.noscript !== undefined) {

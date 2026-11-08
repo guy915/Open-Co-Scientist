@@ -13,27 +13,30 @@ import {ExampleChat} from '@/features/chat/example_chat';
 import {ThemeProvider} from '@/shared/hooks/theme_context';
 import {PageMetadata} from '@/shared/hooks/use_page_metadata';
 import {DocumentSkeleton} from '@/shared/ui';
+import {loadChunk} from '@/shared/lib/load_chunk';
 
 const RunDetail = lazy(() =>
-  import('@/features/report/run_detail').then(module => ({
+  loadChunk(() => import('@/features/report/run_detail')).then(module => ({
     default: module.RunDetail,
   })),
 );
 
 const PrivacyPage = lazy(() =>
-  import('@/features/legal/privacy_page').then(module => ({
+  loadChunk(() => import('@/features/legal/privacy_page')).then(module => ({
     default: module.PrivacyPage,
   })),
 );
 
 const LaunchOperations = lazy(() =>
-  import('@/features/diagnostics/launch_operations').then(module => ({
-    default: module.LaunchOperations,
-  })),
+  loadChunk(() => import('@/features/diagnostics/launch_operations')).then(
+    module => ({
+      default: module.LaunchOperations,
+    }),
+  ),
 );
 
 const SpendView = lazy(() =>
-  import('@/features/diagnostics/spend_view').then(module => ({
+  loadChunk(() => import('@/features/diagnostics/spend_view')).then(module => ({
     default: module.SpendView,
   })),
 );

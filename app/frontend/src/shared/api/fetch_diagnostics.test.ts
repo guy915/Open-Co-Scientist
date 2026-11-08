@@ -62,3 +62,26 @@ it('never recursively logs a failed log ingestion request', async () => {
   observed.stop();
   expect(observed.details).toEqual([]);
 });
+
+it('does not record a status the caller expects', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue(new Response('', {status: 404})),
+  );
+  const observed = observe();
+  const res = await fetchWithSession('/api/runs/r1/report', undefined, [404]);
+  observed.stop();
+  expect(res.status).toBe(404);
+  expect(observed.details).toEqual([]);
+});
+
+it('does not record a network failure while the browser is offline', async () => {
+  const error = new TypeError('Failed to fetch');
+  vi.stubGlobal('fetch', vi.fn().mockRejectedValue(error));
+  const onLine = vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
+  const observed = observe();
+  await expect(fetchWithSession('/status')).rejects.toBe(error);
+  observed.stop();
+  onLine.mockRestore();
+  expect(observed.details).toEqual([]);
+});

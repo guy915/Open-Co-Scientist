@@ -1,9 +1,10 @@
 import {lazy, Suspense} from 'react';
 import {Button} from '@/shared/ui';
 import {ErrorBoundary} from './error_boundary';
+import {loadChunk} from '@/shared/lib/load_chunk';
 
 const MarkdownRenderer = lazy(() =>
-  import('./markdown_message_renderer').then(module => ({
+  loadChunk(() => import('./markdown_message_renderer')).then(module => ({
     default: module.MarkdownMessageRenderer,
   })),
 );

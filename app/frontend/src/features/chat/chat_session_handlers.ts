@@ -48,7 +48,10 @@ async function stageTurnFiles(
   deps: SubmitComposerDeps,
 ): Promise<StagedDocument[]> {
   if (!deps.files.length) return [];
-  const staged = await Promise.all(deps.files.map(file => stageDocument(file)));
+  // One at a time: the server extracts one document per scientist at once and
+  // answers a parallel upload with 429, which failed every multi-file turn.
+  const staged: StagedDocument[] = [];
+  for (const file of deps.files) staged.push(await stageDocument(file));
   deps.update(current => ({
     pendingAttachments: [...current.pendingAttachments, ...staged],
   }));

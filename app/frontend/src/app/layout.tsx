@@ -35,11 +35,12 @@ import {useChatHistoryContext} from '@/shared/hooks/history_context';
 import {routeIds} from '@/shared/lib/routes';
 import {useLaunchStatus} from '@/shared/hooks/launch_status_context';
 import {LaunchStatusBanner} from '@/shared/ui/launch_status_banner';
+import {loadChunk} from '@/shared/lib/load_chunk';
 
 type LayoutChrome = ReturnType<typeof useLayoutChrome>;
 
 const SettingsDialog = lazy(() =>
-  import('@/features/access/settings_dialog').then(module => ({
+  loadChunk(() => import('@/features/access/settings_dialog')).then(module => ({
     default: module.SettingsDialog,
   })),
 );

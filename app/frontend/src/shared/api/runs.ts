@@ -254,9 +254,11 @@ export function uploadRunDocument(
 
 // The backend uses 404 for a report not yet generated.
 export async function getReport(id: string): Promise<Report | null> {
-  const res = await fetchWithSession(`${API_BASE_URL}/api/runs/${id}/report`, {
-    headers: clientHeaders(),
-  });
+  const res = await fetchWithSession(
+    `${API_BASE_URL}/api/runs/${id}/report`,
+    {headers: clientHeaders()},
+    [404],
+  );
   if (res.status === 404) return null;
   return parseJson<Report>(res);
 }
@@ -563,18 +565,24 @@ async function responseErrorMessage(res: Response): Promise<string> {
   return `${res.status} ${text || res.statusText}`;
 }
 
+// `expectedStatuses` are answers the caller handles as normal states, such
+// as 404 for a report that is not written yet, so they are not failures.
 export async function fetchWithSession(
   url: string,
   init?: RequestInit,
+  expectedStatuses: readonly number[] = [],
 ): Promise<Response> {
   let res: Response;
   try {
     res = await fetch(url, init);
   } catch (error) {
-    logFetchFailure(url, init, 'network');
+    // An offline browser is the visitor's connection, not a service fault.
+    if (navigator.onLine !== false) logFetchFailure(url, init, 'network');
     throw error;
   }
-  if (!res.ok) logFetchFailure(url, init, res.status);
+  if (!res.ok && !expectedStatuses.includes(res.status)) {
+    logFetchFailure(url, init, res.status);
+  }
   return res;
 }
 

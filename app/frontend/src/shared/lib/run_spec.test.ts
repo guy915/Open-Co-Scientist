@@ -31,9 +31,12 @@ describe('interviewToRunSpec', () => {
 });
 
 describe('availableTierOptions', () => {
-  it('leaves only Express open to free usage', () => {
-    const open = availableTierOptions().filter(option => !option.disabled);
-    expect(open.map(option => option.id)).toEqual(['express']);
+  it('opens every run type to free usage with its credit cost', () => {
+    const options = availableTierOptions();
+    expect(options.some(option => option.disabled)).toBe(false);
+    expect(options.find(option => option.id === 'ultra')?.hint).toContain(
+      '8 of your free daily credits',
+    );
   });
 
   it('opens every run type with an API key', () => {

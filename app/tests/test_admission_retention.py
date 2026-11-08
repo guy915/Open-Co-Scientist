@@ -60,7 +60,10 @@ def test_every_expired_counter_family_is_swept_without_a_new_request() -> None:
         conn.execute("INSERT INTO input_admissions VALUES (80,'client','owner',1,1)")
         conn.execute("INSERT INTO app_llm_usage VALUES (80,'owner',1,1)")
         conn.execute("INSERT INTO feedback_admissions VALUES ('owner','host',?)", (80 * _DAY,))
-        conn.execute("INSERT INTO free_run_usage VALUES ('old','owner',?)", (80 * _DAY,))
+        conn.execute(
+            "INSERT INTO free_run_usage (run_id, client_id, created_at) VALUES ('old','owner',?)",
+            (80 * _DAY,),
+        )
         conn.execute("INSERT INTO log_ingest_admissions VALUES (?,1,1,1)", (80 * 1440,))
     assert purge_expired_admission_history(now=_NOW) == 6
     assert purge_expired_admission_history(now=_NOW) == 0

@@ -622,10 +622,12 @@ function FreeUsageNote({usage}: {usage: FreeUsage | null}) {
   const count =
     usage.limit === null
       ? ''
-      : `, ${usage.remaining} of ${usage.limit} left today`;
+      : ` ${usage.remaining} of ${usage.limit} credits left today.`;
+  const {express, standard, extended, ultra} = usage.costs;
   return (
     <p className={HINT_CLASSES} role="status">
-      Free usage: Express runs only{count}.
+      Free usage:{count} Express {express}, Standard {standard}, Extended{' '}
+      {extended}, Ultra {ultra} credits.
     </p>
   );
 }

@@ -194,10 +194,10 @@ def test_money_total_does_not_loosen_free_run_limit(
 
     monkeypatch.setenv("LLM_TOTAL_BUDGET_EUR", "10000")
     with transaction(budget) as conn:
-        for index in range(settings.free_runs_per_day):
-            claim_free_run(conn, "owner", f"run-{index}")
+        for index in range(settings.free_credits_per_day // 3):
+            claim_free_run(conn, "owner", f"run-{index}", "express")
     with pytest.raises(FreeUsageExhaustedError), transaction(budget) as conn:
-        claim_free_run(conn, "owner", "one-extra")
+        claim_free_run(conn, "owner", "one-extra", "express")
 
 
 @pytest.mark.parametrize("model_name", [LUNA, "azure/responses/gpt-6-luna-2026-09-22"])

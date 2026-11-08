@@ -9,8 +9,16 @@ import type {
 } from '@/shared/api/runs';
 import {keyedProviders} from './client_id';
 
-// The backend permits only express for keyless free runs.
+// Keyless runs default to the cheapest tier of the weighted free budget.
 const FREE_RUN_TIER: RunTier = 'express';
+
+// Mirrors core/run_modes FREE_TIER_CREDITS; the backend enforces the budget.
+export const FREE_TIER_CREDITS: Record<RunTier, number> = {
+  express: 3,
+  standard: 4,
+  extended: 6,
+  ultra: 8,
+};
 
 function defaultRunTier(): RunTier {
   return keyedProviders().length > 0 ? 'standard' : FREE_RUN_TIER;
@@ -115,17 +123,14 @@ export const TIER_OPTIONS: RunTierOption[] = [
   },
 ];
 
+// Keyless callers see each tier's free credit cost; a tier above the
+// remaining credits stays selectable and the backend answers 429.
 export function availableTierOptions(): RunTierOption[] {
   if (keyedProviders().length > 0) return TIER_OPTIONS;
-  return TIER_OPTIONS.map(option =>
-    option.id === FREE_RUN_TIER
-      ? option
-      : {
-          ...option,
-          disabled: true,
-          hint: 'Requires your own API key (Settings > Model).',
-        },
-  );
+  return TIER_OPTIONS.map(option => ({
+    ...option,
+    hint: `Uses ${FREE_TIER_CREDITS[option.id]} of your free daily credits.`,
+  }));
 }
 
 export const FOCUS_OPTIONS: RunFocusOption[] = [

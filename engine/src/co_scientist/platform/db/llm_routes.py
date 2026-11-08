@@ -48,8 +48,8 @@ def admit_route(
     estimate: int,
     total: int | None,
 ) -> RunRoute:
-    run = conn.execute("SELECT profile FROM runs WHERE id=?", (run_id,)).fetchone()
-    if run is None or run[0] != "express":
+    run = conn.execute("SELECT 1 FROM runs WHERE id=?", (run_id,)).fetchone()
+    if run is None:
         raise ProviderAdmissionError(UNAVAILABLE)
     allowed = (
         "azure" in slots

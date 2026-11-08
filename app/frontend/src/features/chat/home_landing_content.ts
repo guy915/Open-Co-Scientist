@@ -217,9 +217,10 @@ export const FAQ: readonly FaqEntry[] = [
   {
     question: 'Do I need an API key?',
     answer:
-      'No. Without a key you are on free usage: you can start Express runs ' +
-      'only, up to 3 per day on this device. Add your own key under Model ' +
-      'to use every run type, with higher daily limits.',
+      'No. Without a key you get 12 free credits per day on this device. ' +
+      'Express costs 3, Standard 4, Extended 6 and Ultra 8, so you can run ' +
+      'four Express, three Standard, two Extended, or one Ultra plus one ' +
+      'smaller run. Add your own key under Model for higher daily limits.',
   },
   {
     question: 'Which model does it use?',

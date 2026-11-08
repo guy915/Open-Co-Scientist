@@ -6,13 +6,21 @@ from typing import Any
 from co_scientist.core import byok_scope
 from co_scientist.core.admission_windows import utc_day_bounds
 from co_scientist.core.config import settings
+from co_scientist.core.run_modes import FREE_TIER_CREDITS, free_tier_credits
 from co_scientist.platform.llm.process_mode import offline_mode
 
-FREE_TIER = "express"
+# Keyless callers who name no tier start on the cheapest one.
+FREE_DEFAULT_TIER = "express"
 
 
 class FreeUsageExhaustedError(Exception):
-    """The daily free-run allowance is exhausted."""
+    """The daily free credits cannot cover the requested tier."""
+
+    def __init__(self, tier: str, needed: int, remaining: int) -> None:
+        super().__init__(tier)
+        self.tier = tier
+        self.needed = needed
+        self.remaining = remaining
 
 
 def applies(byok: byok_scope.ByokCredential | None, llm_backend: str) -> bool:
@@ -20,20 +28,25 @@ def applies(byok: byok_scope.ByokCredential | None, llm_backend: str) -> bool:
 
 
 def daily_limit() -> int | None:
-    limit = settings.free_runs_per_day
+    limit = settings.free_credits_per_day
     return limit if limit > 0 else None
 
 
 def used_today(conn: sqlite3.Connection, owner: str, now: float) -> int:
     start, _ = utc_day_bounds(now)
     row = conn.execute(
-        "SELECT COUNT(*) FROM free_run_usage WHERE client_id=? AND created_at>=?",
+        "SELECT COALESCE(SUM(credits),0) FROM free_run_usage WHERE client_id=? AND created_at>=?",
         (owner, start),
     ).fetchone()
     return int(row[0])
 
 
-def claim_free_run(conn: sqlite3.Connection, owner: str, run_id: str) -> None:
+def can_afford_any(used: int) -> bool:
+    limit = daily_limit()
+    return limit is None or used + min(FREE_TIER_CREDITS.values()) <= limit
+
+
+def claim_free_run(conn: sqlite3.Connection, owner: str, run_id: str, tier: str) -> None:
     """Count and admission share the create transaction; deleting a run
     never refunds its independent usage-ledger slot.
     """
@@ -41,17 +54,20 @@ def claim_free_run(conn: sqlite3.Connection, owner: str, run_id: str) -> None:
 
     now = current_time()
     limit = daily_limit()
-    if limit is not None and used_today(conn, owner, now) >= limit:
-        raise FreeUsageExhaustedError
+    cost = free_tier_credits(tier)
+    if limit is not None:
+        used = used_today(conn, owner, now)
+        if used + cost > limit:
+            raise FreeUsageExhaustedError(tier, cost, max(limit - used, 0))
     conn.execute(
-        "INSERT INTO free_run_usage (run_id, client_id, created_at) VALUES (?,?,?)",
-        (run_id, owner, now),
+        "INSERT INTO free_run_usage (run_id, client_id, created_at, credits) VALUES (?,?,?,?)",
+        (run_id, owner, now, cost),
     )
 
 
 def usage_payload(owner: str) -> dict[str, Any]:
     """Offline deterministic execution spends no deployment free-model
-    allowance.
+    allowance. Amounts are credits; ``costs`` prices each tier.
     """
     from co_scientist.platform.db import connect, current_time
 
@@ -61,7 +77,7 @@ def usage_payload(owner: str) -> dict[str, Any]:
     limit = daily_limit()
     return {
         "enforced": not offline_mode(),
-        "tier": FREE_TIER,
+        "costs": dict(FREE_TIER_CREDITS),
         "limit": limit,
         "used": used,
         "remaining": None if limit is None else max(limit - used, 0),

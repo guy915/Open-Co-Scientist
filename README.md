@@ -68,10 +68,11 @@ so a run survives restarts and resumes where it stopped.
   Ling 3.1 Flash, with free Nemotron fallbacks. They are slower and weaker
   than frontier models, their zero price is the provider's decision and can
   end, and results depend heavily on the model.
-- **Capacity.** Without your own key, each browser gets three Express runs a
-  day by default, behind per-network and global daily caps. The free routes
+- **Capacity.** Without your own key, each browser gets 12 free credits a day
+  by default (Express 3, Standard 4, Extended 6, Ultra 8), behind per-network
+  and global daily caps. The free routes
   are rate-limited for the whole deployment, so a busy day can park runs until
-  the daily reset. Larger run sizes need your own key. Runs take from tens of
+  the daily reset. Runs take from tens of
   minutes to several hours, depending on size and provider speed.
 - **One server.** The API is a single process on SQLite. It favors durability
   and simplicity over scale.

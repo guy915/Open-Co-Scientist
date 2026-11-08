@@ -16,7 +16,8 @@ from co_scientist.core.admission_windows import utc_day
 from co_scientist.core.async_bridge import off_loop
 from co_scientist.core.config import settings
 from co_scientist.core.exceptions import ProviderAdmissionError
-from co_scientist.domains.access.free_usage import daily_limit, used_today
+from co_scientist.core.run_modes import FREE_TIER_CREDITS
+from co_scientist.domains.access.free_usage import can_afford_any, used_today
 from co_scientist.orchestration.repository import events, tasks_lifecycle
 from co_scientist.platform.db import (
     Connection,
@@ -118,7 +119,7 @@ def _free_refusal(
     reset = float((day + 1) * 86400)
     total, peers, free_total, free_peers = conn.execute(
         "SELECT COUNT(*),COALESCE(SUM(host=?),0),COALESCE(SUM(free),0),"
-        "COALESCE(SUM(free AND host=?),0) FROM run_admissions WHERE day=?",
+        "COALESCE(SUM(CASE WHEN host=? THEN free ELSE 0 END),0) FROM run_admissions WHERE day=?",
         (host, host, day),
     ).fetchone()
     if total >= settings.runs_per_day or peers >= settings.runs_per_host_per_day:
@@ -132,11 +133,11 @@ def _free_refusal(
     if active[0] >= settings.max_concurrent_runs or active[1] >= settings.concurrent_runs_per_host:
         return "Research capacity is busy while current runs finish.", None, False
     if not offline_mode():
-        limit = daily_limit()
+        cheapest = min(FREE_TIER_CREDITS.values())
         if (
-            free_total >= settings.free_runs_globally_per_day
-            or free_peers >= settings.free_runs_per_host_per_day
-            or (owner and limit is not None and used_today(conn, owner, now) >= limit)
+            free_total + cheapest > settings.free_credits_globally_per_day
+            or free_peers + cheapest > settings.free_credits_per_host_per_day
+            or (owner and not can_afford_any(used_today(conn, owner, now)))
         ):
             return (
                 "Today's free research capacity is used up. You can use your own key in Settings.",

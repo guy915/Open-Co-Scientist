@@ -594,8 +594,8 @@ completed and no unexpected request error occurred.
    close and reconnect; refusals explain the delay. Lower `MAX_CONCURRENT_RUNS`
    to 1 to protect reads from new research work. Preserve existing durable
    tasks and provider transactions; do not delete the database or its WAL.
-4. On quota pressure, lower `FREE_RUNS_GLOBALLY_PER_DAY`, `FREE_RUNS_PER_HOST_PER_DAY`
-   and `FREE_RUNS_PER_DAY`; inspect `APP_LLM_GLOBAL_CALLS_PER_DAY`,
+4. On quota pressure, lower `FREE_CREDITS_GLOBALLY_PER_DAY`, `FREE_CREDITS_PER_HOST_PER_DAY`
+   and `FREE_CREDITS_PER_DAY`; inspect `APP_LLM_GLOBAL_CALLS_PER_DAY`,
    `APP_LLM_GLOBAL_TOKENS_PER_DAY` and `PROVIDER_HOST_*` consumption. Daily counters
    reset on UTC boundaries. Raising free/admission/model budgets does not add
    API capacity and can spend the remaining allowance earlier. Preserve bounded

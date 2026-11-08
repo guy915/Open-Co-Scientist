@@ -35,7 +35,7 @@ describe('availableTierOptions', () => {
     const options = availableTierOptions();
     expect(options.some(option => option.disabled)).toBe(false);
     expect(options.find(option => option.id === 'ultra')?.hint).toContain(
-      '8 of your free daily credits',
+      '7 of your free daily credits',
     );
   });
 

@@ -210,7 +210,7 @@ def test_continuation_allowances_span_distinct_runs(
 def test_continuations_charge_free_allowance_and_ignore_unstored_byok_headers(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    _limit(monkeypatch, "free_credits_per_day", 8)
+    _limit(monkeypatch, "free_credits_per_day", 7)
     client = make_client()
     run_id = _completed(client)
     with db.connect() as conn:

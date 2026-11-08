@@ -8,7 +8,6 @@ from dataclasses import dataclass, replace
 
 from co_scientist.core.admission_windows import UTC_DAY_SECONDS, utc_day
 from co_scientist.core.exceptions import ProviderAdmissionError
-from co_scientist.core.run_modes import free_tier_credits
 from co_scientist.platform.db import connect, current_time, default_db_path, transaction
 from co_scientist.platform.db.anthropic_credit import (
     CreditReservation,
@@ -286,6 +285,9 @@ def claim_continuation(
     key = f"{prefix}{input_id}"
     cost = 0
     if free:
+        # Lazy like settings: run_modes loads config, which live evals import later.
+        from co_scientist.core.run_modes import free_tier_credits
+
         tier = conn.execute("SELECT profile FROM runs WHERE id=?", (run_id,)).fetchone()
         cost = free_tier_credits(tier[0] if tier else None)
         used = conn.execute(

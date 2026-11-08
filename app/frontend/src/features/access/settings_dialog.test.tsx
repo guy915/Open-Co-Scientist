@@ -27,9 +27,9 @@ it('shows the DeepSeek version label for its API model ID', () => {
 
 const FREE_USAGE = {
   enforced: true,
-  costs: {express: 3, standard: 4, extended: 6, ultra: 8},
-  limit: 12,
-  used: 4,
+  costs: {express: 2, standard: 3, extended: 5, ultra: 7},
+  limit: 11,
+  used: 3,
   remaining: 8,
   resets_at: 0,
 };

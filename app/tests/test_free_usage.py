@@ -44,13 +44,13 @@ def test_free_run_rejects_numeric_overrides(real_backend: None) -> None:
 
 def test_free_runs_are_capped_per_day(real_backend: None) -> None:
     with TestClient(app) as client:
-        for _ in range(4):
+        for _ in range(5):
             assert _create(client).status_code == 200
         response = _create(client)
         assert response.status_code == 429
         assert "used your free runs" in response.json()["detail"]
         runs = client.get("/api/runs", headers=_CLIENT).json()["runs"]
-        assert len(runs) == 4
+        assert len(runs) == 5
         other = _create(client, headers={"X-Client-ID": "another-device"})
         assert other.status_code == 200
 
@@ -58,11 +58,14 @@ def test_free_runs_are_capped_per_day(real_backend: None) -> None:
 @pytest.mark.parametrize(
     ("tiers", "refused"),
     [
-        (["standard"] * 3, "express"),
+        (["standard"] * 3 + ["express"], "express"),
         (["extended"] * 2, "express"),
-        (["ultra", "standard"], "express"),
+        (["extended", "express", "express", "express"], "express"),
+        (["extended", "standard", "standard"], "express"),
+        (["ultra", "express", "express"], "express"),
+        (["ultra", "standard"], "extended"),
         (["ultra"], "extended"),
-        (["extended", "standard"], "standard"),
+        (["ultra"], "ultra"),
     ],
 )
 def test_free_credits_weight_each_tier(real_backend: None, tiers: list[str], refused: str) -> None:
@@ -75,16 +78,6 @@ def test_free_credits_weight_each_tier(real_backend: None, tiers: list[str], ref
         costs = usage["costs"]
         assert usage["used"] == sum(costs[tier] for tier in tiers)
         assert usage["remaining"] < costs[refused]
-
-
-def test_one_ultra_leaves_room_for_a_smaller_run(real_backend: None) -> None:
-    with TestClient(app) as client:
-        assert _create(client, tier="ultra").status_code == 200
-        assert _create(client, tier="ultra").status_code == 429
-        denied = _create(client, tier="extended")
-        assert "needs 6 credits" in denied.json()["detail"]
-        assert _create(client, tier="standard").status_code == 200
-        assert client.get("/api/free-usage", headers=_CLIENT).json()["remaining"] == 0
 
 
 @pytest.mark.parametrize(

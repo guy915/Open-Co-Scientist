@@ -68,9 +68,9 @@ so a run survives restarts and resumes where it stopped.
   Ling 3.1 Flash, with free Nemotron fallbacks. They are slower and weaker
   than frontier models, their zero price is the provider's decision and can
   end, and results depend heavily on the model.
-- **Capacity.** Without your own key, each browser gets 12 free credits a day
-  by default (Express 3, Standard 4, Extended 6, Ultra 8), behind per-network
-  and global daily caps. The free routes
+- **Capacity.** Without your own key, each browser gets 11 free credits a day
+  by default (Express 2, Standard 3, Extended 5, Ultra 7),
+  behind per-network and global daily caps. The free routes
   are rate-limited for the whole deployment, so a busy day can park runs until
   the daily reset. Runs take from tens of
   minutes to several hours, depending on size and provider speed.

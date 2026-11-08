@@ -14,10 +14,10 @@ const FREE_RUN_TIER: RunTier = 'express';
 
 // Mirrors core/run_modes FREE_TIER_CREDITS; the backend enforces the budget.
 export const FREE_TIER_CREDITS: Record<RunTier, number> = {
-  express: 3,
-  standard: 4,
-  extended: 6,
-  ultra: 8,
+  express: 2,
+  standard: 3,
+  extended: 5,
+  ultra: 7,
 };
 
 function defaultRunTier(): RunTier {

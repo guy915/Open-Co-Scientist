@@ -50,9 +50,9 @@ class Settings(BaseSettings):
     human_corpus_client_bytes: int = Field(default=50 * 1024 * 1024, ge=1)
     human_corpus_host_bytes: int = Field(default=100 * 1024 * 1024, ge=1)
     human_corpus_global_bytes: int = Field(default=200 * 1024 * 1024, ge=1)
-    # Free caps are in credits (core/run_modes FREE_TIER_CREDITS; Express = 3).
-    free_credits_per_host_per_day: int = Field(default=24, ge=1)
-    free_credits_globally_per_day: int = Field(default=60, ge=1)
+    # Free caps are in credits (core/run_modes FREE_TIER_CREDITS; Express = 2).
+    free_credits_per_host_per_day: int = Field(default=22, ge=1)
+    free_credits_globally_per_day: int = Field(default=55, ge=1)
     concurrent_runs_per_host: int = Field(default=10, ge=1)
     continuations_per_run_per_day: int = Field(default=3, ge=1)
     continuations_per_client_per_day: int = Field(default=8, ge=1)
@@ -122,7 +122,7 @@ class Settings(BaseSettings):
     honeycomb_marker_api_key: SecretStr = SecretStr("")
     # Weighted daily credits per browser; 0 removes the per-browser cap but not
     # the host and global caps.
-    free_credits_per_day: int = 12
+    free_credits_per_day: int = 11
 
     # Hermetic tests select deterministic entailment; production defaults to
     # semantic assessment.

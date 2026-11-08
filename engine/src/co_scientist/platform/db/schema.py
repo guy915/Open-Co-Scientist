@@ -868,6 +868,6 @@ ADDED_COLUMNS = (
     # NULL means not measured: unsettled, or settled before this column existed.
     ("llm_spend", "refused", "INTEGER"),
     ("anthropic_credit", "refused", "INTEGER"),
-    # Weighted free credits; rows written before weighting were Express (3).
-    ("free_run_usage", "credits", "INTEGER NOT NULL DEFAULT 3"),
+    # Weighted free credits; rows written before weighting were Express (2).
+    ("free_run_usage", "credits", "INTEGER NOT NULL DEFAULT 2"),
 )

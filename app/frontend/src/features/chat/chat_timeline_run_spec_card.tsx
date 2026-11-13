@@ -1,5 +1,8 @@
 import type {RunFocus, RunTier} from '@/shared/api/runs';
+import {useEffect, useState} from 'react';
 import {displayTitle} from '@/shared/lib/titles';
+import {fetchFreeUsage} from '@/shared/api/system';
+import {keyedProviders} from '@/shared/lib/client_id';
 import {Link} from 'react-router-dom';
 import {Button, buttonClasses, IconButton, StatusText} from '@/shared/ui';
 import {
@@ -12,6 +15,7 @@ import {TruncatedLabel} from '@/shared/ui/truncated_label';
 import {useLaunchStatus} from '@/shared/hooks/launch_status_context';
 import {LAUNCH_NOTICE_ID} from '@/shared/ui/launch_status_banner';
 import {
+  type FreeAllowance,
   type InferredRunSpec,
   availableTierOptions,
   FOCUS_OPTIONS,
@@ -175,6 +179,7 @@ function SpecOptionGroups({
   onFocusChange: (focus: RunFocus) => void;
   onTierChange: (tier: RunTier) => void;
 }) {
+  const allowance = useFreeAllowance(locked);
   return (
     <>
       <RunOptionGroup
@@ -189,12 +194,31 @@ function SpecOptionGroups({
         label="Run type"
         name="tier"
         value={spec.tier}
-        options={availableTierOptions()}
+        options={availableTierOptions(allowance)}
         locked={locked}
         onChange={value => onTierChange(value as RunTier)}
       />
     </>
   );
+}
+
+// Keyless callers see their daily total next to each tier's cost; until the
+// read succeeds the hint names the cost alone.
+function useFreeAllowance(locked: boolean): FreeAllowance | null {
+  const [allowance, setAllowance] = useState<FreeAllowance | null>(null);
+  useEffect(() => {
+    if (locked || keyedProviders().length > 0) return;
+    let live = true;
+    fetchFreeUsage()
+      .then(usage => {
+        if (live && usage.enforced) setAllowance(usage);
+      })
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, [locked]);
+  return allowance;
 }
 
 interface RunSpecDocumentProps {

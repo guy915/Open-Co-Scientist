@@ -124,7 +124,7 @@ test('a live turn names the question it is still drafting', () => {
   const {rerender} = render(
     <AssistantMessage content="Which model?" reasoning="A thought." live />,
   );
-  expect(screen.queryByText('Drafting question')).toBeNull();
+  expect(screen.queryByText('Drafting questions')).toBeNull();
 
   rerender(
     <AssistantMessage
@@ -136,11 +136,11 @@ test('a live turn names the question it is still drafting', () => {
     />,
   );
 
-  const status = screen.getByText('Drafting question');
+  const status = screen.getByText('Drafting questions');
   expect(status.closest('[role="status"]')).not.toBeNull();
   expect(status.closest('[aria-hidden="true"]')).toBeNull();
   expect(screen.getByText('Thinking').closest('[role="status"]')).toBeNull();
 
   rerender(<AssistantMessage content="Which model?" phase="questions" />);
-  expect(screen.queryByText('Drafting question')).toBeNull();
+  expect(screen.queryByText('Drafting questions')).toBeNull();
 });

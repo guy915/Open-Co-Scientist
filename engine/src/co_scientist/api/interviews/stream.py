@@ -19,7 +19,7 @@ from co_scientist.platform.db.launch_control import LaunchControl
 logger = logging.getLogger(__name__)
 
 # One queue preserves reasoning and prose order across independent coroutines.
-_Fragment = tuple[str, str]
+_Fragment = tuple[str, Any]
 
 
 async def _start_stream_advance(
@@ -36,8 +36,11 @@ async def _start_stream_advance(
     async def _on_phase(phase: str) -> None:
         await queue.put(("phase", phase))
 
+    async def _on_questions(questions: list[dict[str, Any]]) -> None:
+        await queue.put(("questions", questions))
+
     task = asyncio.create_task(
-        turns.advance_turn(interview_id, _on_reasoning, _on_prose, _on_phase)
+        turns.advance_turn(interview_id, _on_reasoning, _on_prose, _on_phase, _on_questions)
     )
     task.add_done_callback(lambda _: queue.put_nowait(None))
     return queue, task
@@ -58,7 +61,10 @@ async def _advance_stream(
         try:
             while (fragment := await queue.get()) is not None:
                 kind, content = fragment
-                yield sse_frame({"type": kind, "content": content})
+                # Questions arrive whole, ahead of the saved turn, so the
+                # client can show them while the turn finishes.
+                key = "questions" if kind == "questions" else "content"
+                yield sse_frame({"type": kind, key: content})
 
             error_frame, updated = await _resolve_advance_task(task, interview_id)
             if error_frame is not None:

@@ -45,7 +45,7 @@ for (const theme of ['light', 'dark']) {
     for (const [label, credits] of [['Express', 2], ['Standard', 3], ['Extended', 5], ['Ultra', 7]] as const) {
       const radio = page.getByRole('radio', {name: new RegExp(label)});
       await expect(radio).toBeEnabled();
-      await expect(radio.locator('..')).toContainText(`Uses ${credits} of your free daily credits.`);
+      await expect(radio.locator('..')).toContainText(new RegExp(`Uses ${credits} of your (\\d+ )?free daily credits\\.`));
     }
     await expect(page.getByText('Suitable for medium-sized research questions and experiments.')).toBeVisible();
     await expect(page.getByText('Title:', {exact: true})).toHaveCount(0);

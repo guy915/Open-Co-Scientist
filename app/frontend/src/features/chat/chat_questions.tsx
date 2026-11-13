@@ -3,9 +3,11 @@ import {
   type InterviewQuestion,
   type InterviewTurn,
 } from '@/shared/api/runs';
-import {type ReactNode, useState} from 'react';
+import {type ReactNode, useEffect, useRef, useState} from 'react';
 import {Icon} from '@/shared/ui/icon';
 import {Button, Chip, IconButton, TextField} from '@/shared/ui';
+import {SlidingThumb} from '@/shared/ui/tabs';
+import {useSlidingIndicator} from '@/shared/hooks/use_sliding_indicator';
 import {joinClasses} from '@/shared/ui/classes';
 import {MarkdownMessage} from '@/shared/ui/markdown_message';
 import {
@@ -141,6 +143,12 @@ const OTHER_PLACEHOLDER = 'Type your own answer';
 export interface QuestionChooserProps {
   questions: InterviewQuestion[];
   onAnswer: (text: string) => void;
+  // Held while the turn that asks these questions is still being saved.
+  sendDisabled?: boolean;
+}
+
+export function questionsKey(questions: InterviewQuestion[]): string {
+  return JSON.stringify(questions.map(question => question.question));
 }
 
 // Selection never sends a turn; the chooser owns commit. Remount on turn id to
@@ -149,7 +157,11 @@ export interface QuestionChooserProps {
 // options scroll, and only past a height a typical question fits within on
 // desktop (dvh follows the Safari toolbar on phones); the head stays outside
 // the scroller so its tooltips cannot widen it into a horizontal scrollbar.
-export function QuestionChooser({questions, onAnswer}: QuestionChooserProps) {
+export function QuestionChooser({
+  questions,
+  onAnswer,
+  sendDisabled = false,
+}: QuestionChooserProps) {
   const [selections, setSelections] = useState(emptySelections);
   const [active, setActive] = useState(0);
   const [minimized, setMinimized] = useState(false);
@@ -176,7 +188,7 @@ export function QuestionChooser({questions, onAnswer}: QuestionChooserProps) {
       aria-label="Answer options"
     >
       <ChooserHead
-        answered={answer.length > 0}
+        answered={answer.length > 0 && !sendDisabled}
         onSend={sendAnswer}
         minimized={minimized}
         onToggleMinimize={() => setMinimized(open => !open)}
@@ -257,18 +269,12 @@ function QuestionTabs({
         disabled={active === 0}
         onClick={() => onSelect(active - 1)}
       />
-      <div
-        role="tablist"
-        aria-label="Questions"
-        className="flex min-w-0 items-center gap-1 overflow-x-auto [scrollbar-width:none]"
-        onKeyDown={event => {
-          const step = TAB_KEY_STEPS[event.key];
-          const next = active + (step ?? 0);
-          if (!step || next < 0 || next >= questions.length) return;
-          event.preventDefault();
-          onSelect(next);
-          document.getElementById(questionTabId(next))?.focus();
-        }}
+      <QuestionTabStrip
+        // A check mark widens an answered tab, so the fill re-measures.
+        measureKey={`${active}:${questions.map((_, index) => answerParts(selections, index).length > 0).join()}`}
+        count={questions.length}
+        active={active}
+        onSelect={onSelect}
       >
         {questions.map((question, index) => (
           <QuestionTab
@@ -280,13 +286,69 @@ function QuestionTabs({
             onSelect={() => onSelect(index)}
           />
         ))}
-      </div>
+      </QuestionTabStrip>
       <IconButton
         label="Next question"
         icon="chevron_right"
         disabled={active === questions.length - 1}
         onClick={() => onSelect(active + 1)}
       />
+    </div>
+  );
+}
+
+// One fill slides between the tabs, so a switch reads as moving along the
+// strip rather than one tab blinking out and another in. On a narrow strip
+// the open tab is scrolled into view inside the strip only: scrollIntoView
+// would also scroll the page around it.
+function QuestionTabStrip({
+  measureKey,
+  count,
+  active,
+  onSelect,
+  children,
+}: {
+  measureKey: string;
+  count: number;
+  active: number;
+  onSelect: (index: number) => void;
+  children: ReactNode;
+}) {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const box = useSlidingIndicator(
+    trackRef,
+    '[aria-selected="true"]',
+    measureKey,
+  );
+  useEffect(() => {
+    const track = trackRef.current;
+    const tab = track?.querySelector<HTMLElement>('[aria-selected="true"]');
+    if (!track || !tab) return;
+    const left = tab.offsetLeft - (track.clientWidth - tab.offsetWidth) / 2;
+    track.scrollTo?.({left: Math.max(0, left), behavior: 'smooth'});
+  }, [active]);
+  return (
+    <div
+      ref={trackRef}
+      role="tablist"
+      aria-label="Questions"
+      className="relative flex min-w-0 items-center gap-1 overflow-x-auto [scrollbar-width:none]"
+      onKeyDown={event => {
+        const step = TAB_KEY_STEPS[event.key];
+        const next = active + (step ?? 0);
+        if (!step || next < 0 || next >= count) return;
+        event.preventDefault();
+        onSelect(next);
+        document
+          .getElementById(questionTabId(next))
+          ?.focus({preventScroll: true});
+      }}
+    >
+      <SlidingThumb
+        box={box}
+        className="pointer-events-none absolute inset-y-0 left-0 rounded-full bg-button-tonal-bg"
+      />
+      {children}
     </div>
   );
 }
@@ -306,7 +368,7 @@ function QuestionTab({
 }) {
   return (
     <Button
-      variant={selected ? 'tonal' : 'text'}
+      variant="text"
       size="sm"
       icon={answered ? 'check' : undefined}
       role="tab"
@@ -314,11 +376,12 @@ function QuestionTab({
       aria-selected={selected}
       aria-controls={selected ? questionPanelId(index) : undefined}
       tabIndex={selected ? 0 : -1}
-      // Phones have room for the open tab only; the arrows reach the others.
-      layoutClassName={selected ? 'min-w-0' : 'shrink-0 phone:hidden'}
+      // The strip's sliding fill marks the open tab, so the tab itself stays
+      // unfilled and sits above it.
+      layoutClassName="relative z-1 shrink-0 aria-selected:text-button-tonal-fg aria-selected:hover:bg-transparent"
       onClick={onSelect}
     >
-      <span className="min-w-0 truncate">{label}</span>
+      {label}
     </Button>
   );
 }
@@ -381,7 +444,7 @@ interface QuestionGroupProps {
 function QuestionGroup(props: QuestionGroupProps) {
   const {question, index, selections, setSelections, onChoose} = props;
   return (
-    <fieldset className="m-0 grid min-w-0 gap-2 border-0 p-0">
+    <fieldset className="ui-motion-enter m-0 grid min-w-0 gap-2 border-0 p-0">
       <legend className="text-base leading-[1.35] font-medium text-cosci-fg">
         <MarkdownMessage content={question.question} inline />
       </legend>

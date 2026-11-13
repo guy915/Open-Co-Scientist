@@ -3,6 +3,7 @@ from __future__ import annotations
 import dataclasses
 import json
 import logging
+import re
 from collections.abc import Awaitable, Callable
 from typing import Any
 
@@ -14,6 +15,7 @@ from co_scientist.core.config import (
 )
 from co_scientist.core.prompt_cache import CacheablePrompt
 from co_scientist.domains.chat.interviews.output import InterviewProse
+from co_scientist.domains.chat.interviews.questions import normalized_questions
 from co_scientist.domains.chat.interviews.state_repair import repair_turn_state
 from co_scientist.domains.chat.titles import title_case
 from co_scientist.domains.documents import repository as store
@@ -30,11 +32,15 @@ class InterviewModelUnavailableError(RuntimeError):
 
 OPEN_MARKER = "<run_spec>"
 CLOSE_MARKER = "</run_spec>"
-_QUESTIONS_KEY = '"questions"'
+_COMPLETED = re.compile(r'"completed"\s*:\s*(true|false)')
+_QUESTIONS_ARRAY = re.compile(r'"questions"\s*:\s*\[')
+_DECODER = json.JSONDecoder()
 
 # What the turn is doing once its prose has ended: the scientist sees the
-# reply stop while the state block, and then its questions, are still being
-# written, so the client names that work instead of showing "Thinking".
+# reply stop while the state block is still being written, so the client
+# names that work instead of showing "Thinking". The block writes its
+# questions first, so "questions" covers the wait until they are shown and
+# "finishing" covers the rest of the block (or a completing turn's block).
 PHASE_FINISHING = "finishing"
 PHASE_QUESTIONS = "questions"
 
@@ -71,36 +77,63 @@ class TurnSplitter:
         self._pending = ""
         self._spec: list[str] = []
         self._in_spec = False
-        self._in_questions = False
+        self._spec_text = ""
+        self._completed: bool | None = None
+        self.questions: list[dict[str, Any]] | None = None
         self._prose: list[str] = []
         self._prose_filter = InterviewProse()
 
     @property
     def phase(self) -> str:
-        """Empty while prose streams; then finishing, then questions."""
-        if self._in_questions:
+        """Empty while prose streams. In the block: questions until they are
+        complete, finishing after them or on a completing turn.
+        """
+        if not self._in_spec:
+            return ""
+        # Most turns ask, so the block is taken to be drafting questions
+        # until it says it completes the interview.
+        if self._completed is not True and self.questions is None:
             return PHASE_QUESTIONS
-        return PHASE_FINISHING if self._in_spec else ""
+        return PHASE_FINISHING
 
-    def _note_questions(self) -> None:
-        # Every chunk carries at least one character, so the key can only
-        # complete within the last len(key) chunks.
-        if not self._in_questions:
-            tail = "".join(self._spec[-len(_QUESTIONS_KEY) :])
-            self._in_questions = _QUESTIONS_KEY in tail
+    def _scan_spec(self, delta: str) -> None:
+        """Read the block as it streams: whether the turn completes, and its
+        questions as soon as their array closes, so the client can show them
+        while the rest of the block is still being written.
+        """
+        self._spec_text += delta
+        if self._completed is None:
+            match = _COMPLETED.search(self._spec_text)
+            if match is not None:
+                self._completed = match.group(1) == "true"
+        if self.questions is None and "]" in delta:
+            self._try_questions()
+
+    def _try_questions(self) -> None:
+        match = _QUESTIONS_ARRAY.search(self._spec_text)
+        if match is None:
+            return
+        try:
+            raw, _ = _DECODER.raw_decode(self._spec_text, match.end() - 1)
+        except ValueError:
+            return
+        # The finished block is normalized again, and warns, when the turn
+        # is saved.
+        self.questions = normalized_questions(raw, warn=False)
 
     def feed(self, delta: str) -> str:
         if self._in_spec:
             self._spec.append(delta)
-            self._note_questions()
+            self._scan_spec(delta)
             return ""
         buffer = self._pending + delta
         start = buffer.find(OPEN_MARKER)
         if start != -1:
             self._in_spec = True
             self._pending = ""
-            self._spec.append(buffer[start + len(OPEN_MARKER) :])
-            self._note_questions()
+            opened = buffer[start + len(OPEN_MARKER) :]
+            self._spec.append(opened)
+            self._scan_spec(opened)
             return self._release(buffer[:start])
         held = _held_back_length(buffer)
         self._pending = buffer[len(buffer) - held :] if held else ""
@@ -132,35 +165,40 @@ class TurnSplitter:
 
 _FORMAT_PROMPT = (
     "Write your reply to the scientist as ordinary markdown. Then, on its "
-    "own line after the reply, emit exactly one block:\n\n"
+    "own line after the reply, emit exactly one block, with its keys in "
+    "this order:\n\n"
     f"{OPEN_MARKER}\n"
-    '{"research_challenge": "...", "focus_area": ["..."], '
+    '{"completed": true or false, "questions": [...], '
+    '"research_challenge": "...", "focus_area": ["..."], '
     '"preferences": ["..."], "lab_constraints": ["..."], '
-    '"title": "..." or null, "completed": true or false, '
-    '"questions": [...]}\n'
+    '"title": "..." or null}\n'
     f"{CLOSE_MARKER}\n\n"
     "Rules for the block:\n"
     "- It MUST be the last thing in your reply, and MUST appear exactly "
     "once. Never open it before you have finished writing to the "
     "scientist.\n"
-    "- The five fields carry the interview's whole current state, not just "
-    "what this turn changed. Repeat fields that did not change.\n"
-    "- ``questions`` is the exception: it describes only the questions THIS "
-    "turn is asking. Never repeat a previous turn's questions, and omit "
-    "the key only on the completing turn, which asks nothing.\n"
+    "- Write ``completed`` first and ``questions`` second: the scientist "
+    "is waiting for the questions, and they are shown as soon as that "
+    "array is written.\n"
+    "- ``questions`` describes only the questions THIS turn is asking. "
+    "Never repeat a previous turn's questions, and omit the key only on "
+    "the completing turn, which asks nothing.\n"
+    "- Of the five fields, include only those this turn changes, each with "
+    "its whole new value (a list is replaced, not appended to). Omit a "
+    "field that did not change: it keeps its current value. On the first "
+    "turn, include every field you can fill.\n"
     "- It is machine-read and never shown to the scientist, so never "
     "mention it, and never refer to it in your reply.\n"
     "- Its contents MUST be valid JSON. Do not wrap it in a code fence."
 )
 
-# Choices are typing affordances, not a separate answer channel.
+# Choices are the only place a question is asked; the prose sets them up.
 _QUESTIONS_PROMPT = r"""
-## Offering answers to click
+## Asking questions
 
-Every question you ask reaches the scientist twice: as prose, and as
-clickable answers in the block's ``questions`` array. Whenever your reply
-ends on a question, that array carries it -- there is no turn that asks in
-prose alone:
+Your questions reach the scientist ONLY as a card of clickable answers,
+built from the block's ``questions`` array and shown under your reply.
+They are never written in your prose:
 
 [{"header": "Model system", "question": "Which model system should the
 ideas be built around?", "multi_select": false, "options": [{"label":
@@ -168,12 +206,19 @@ ideas be built around?", "multi_select": false, "options": [{"label":
 "recommended": true}, {"label": "iPSC-derived line", "description":
 "Renewable and editable", "recommended": false}]}]
 
+- Do NOT write the questions, or their options, in your prose -- not as a
+  list, not as numbered points, not as a closing question. The card shows
+  them right under your reply, so writing them out says everything twice.
+  Your prose gives the context that makes the choices meaningful, and
+  ends with one short sentence that leads into the card, such as "A few
+  choices will pin down the scope." or "One decision settles this.".
 - ``header`` is a two-or-three word label for what is being chosen.
-  ``question`` is the question itself, in full. ``options`` carries two to
-  four answers -- never more than four -- each a short ``label`` and a
-  one-line ``description`` of what choosing it would mean for the work.
-  The scientist can always write their own answer as well, so you do not
-  need an "other" option.
+  ``question`` is the question itself, in full, and must stand on its own,
+  because the card is where the scientist reads it. ``options`` carries
+  two to four answers -- never more than four -- each a short ``label``
+  and a one-line ``description`` of what choosing it would mean for the
+  work. The scientist can always write their own answer as well, so you
+  do not need an "other" option.
 - Every question recommends an answer: set ``recommended`` true on the
   option you would pick for this goal and false on the rest, and list it
   first. A single-select question has exactly one recommended option; a
@@ -184,19 +229,12 @@ ideas be built around?", "multi_select": false, "options": [{"label":
 - One to three questions per turn, never more than three. Ask two or three
   whenever the scientist can settle them together -- separate facets of
   one decision, or independent gaps you would otherwise ask about over
-  several turns -- because that shortens the interview. Your prose asks
-  each of them, in the same order as the array.
+  several turns -- because that shortens the interview.
 - An open answer space is not a reason to omit the array. Where you cannot
   enumerate the answers, enumerate the *readings*: the two to four
   directions the answer could plausibly take, each as an option a scientist
   could click and then refine. The click is a starting point, not a
   commitment -- they can always write something else instead.
-- Do NOT enumerate the options again in your prose. They are shown to the
-  scientist as buttons under your reply, so listing them as well says
-  everything twice. Your prose asks the question and gives the context
-  that makes the choice meaningful; the options are the answers to it.
-- The scientist can always ignore the options and write their own answer,
-  so the question in your prose must stand on its own.
 - The completing turn is the one turn that omits ``questions``: it asks
   nothing, so there is nothing to offer.
 """
@@ -243,9 +281,9 @@ capabilities, data, constraints, or preferences.
   scientist, not a form: say what you understood, say what it implies or
   what it rules out, and then ask.
 - ALWAYS invite the conversation forward. Every turn but the completing
-  one ends on one to three questions -- and every question you ask is also carried as
-  clickable answers in the block (see "Offering answers to click"), so the
-  scientist can click one instead of writing it out.
+  one asks one to three questions, carried only as clickable answers in
+  the block (see "Asking questions"), so the scientist can click one
+  instead of writing it out.
 - Use no emoji. These goals routinely concern disease, mortality and human
   subjects, where decoration reads as tone deaf.
 
@@ -255,7 +293,7 @@ Ask one to three focused questions per turn, never more. That governs how
 many *questions* a turn asks, and never how much you may explain before
 asking them. Group questions the scientist can answer together rather than
 spreading them over several turns. A turn that reflects the goal back,
-lays out the distinctions that matter, and closes on its questions is
+lays out the distinctions that matter, and leads into its questions is
 correct and is what this interview should read like; a bare one-line
 question is not. Do not pad
 with filler or restate the scientist's own words back at them as though
@@ -341,10 +379,11 @@ partial; do not treat it as the whole document.
 
 - Small talk, or a question about you, this system, or the scientist's own
   group: answer it, then guide the conversation back to scoping the goal.
-  Carry every field forward unchanged and leave completed false.
+  Leave every field out of the block, so each keeps its value, and set
+  completed false.
 - An empty or contentless turn: say plainly that you need something to
-  work with and repeat the questions you are waiting on. Carry every
-  field forward unchanged.
+  work with and ask the questions you are waiting on again. Leave every
+  field out of the block.
 - Approval carrying no new information ("looks good", "that's better"):
   do not read it as new scope. Ask whether anything else should change
   before the run starts, or complete if everything essential is captured.
@@ -478,6 +517,7 @@ def _interview_request(interview: dict[str, Any]) -> tuple[str, Any]:
 ReasoningSink = Callable[[str], Awaitable[None]]
 ProseSink = Callable[[str], Awaitable[None]]
 PhaseSink = Callable[[str], Awaitable[None]]
+QuestionsSink = Callable[[list[dict[str, Any]]], Awaitable[None]]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -485,6 +525,7 @@ class TurnSinks:
     on_reasoning: ReasoningSink | None = None
     on_prose: ProseSink | None = None
     on_phase: PhaseSink | None = None
+    on_questions: QuestionsSink | None = None
 
 
 # Silence is bounded independently of total duration because reasoning can make
@@ -570,8 +611,10 @@ async def _relay_chunk(chunk: Any, splitter: TurnSplitter, sinks: TurnSinks) -> 
     delta = chunk.choices[0].delta
     reasoning = getattr(delta, "reasoning_content", "") or ""
     await _emit(sinks.on_reasoning, reasoning)
-    phase = splitter.phase
+    phase, questions = splitter.phase, splitter.questions
     await _emit(sinks.on_prose, splitter.feed(delta.content or ""))
+    if splitter.questions and questions is None and sinks.on_questions is not None:
+        await sinks.on_questions(splitter.questions)
     if splitter.phase != phase:
         await _emit(sinks.on_phase, splitter.phase)
     return bool(reasoning.strip())
@@ -618,11 +661,17 @@ async def _call_interview_model(
     on_reasoning: ReasoningSink | None = None,
     on_prose: ProseSink | None = None,
     on_phase: PhaseSink | None = None,
+    on_questions: QuestionsSink | None = None,
 ) -> dict[str, Any]:
     try:
         prose, fields = await _stream_interview_content(
             interview,
-            TurnSinks(on_reasoning=on_reasoning, on_prose=on_prose, on_phase=on_phase),
+            TurnSinks(
+                on_reasoning=on_reasoning,
+                on_prose=on_prose,
+                on_phase=on_phase,
+                on_questions=on_questions,
+            ),
         )
     except Exception as exc:
         logger.warning("Interview model failed: %s", exc)
@@ -630,7 +679,8 @@ async def _call_interview_model(
             "The interview Agent is temporarily unavailable."
         ) from exc
     if fields is None and prose.strip():
-        await _emit(on_phase, PHASE_FINISHING)
+        # Repair rebuilds the block, questions included.
+        await _emit(on_phase, PHASE_QUESTIONS)
         fields = await repair_turn_state(interview, prose)
         if fields is not None:
             logger.info("Recovered a missing interview state block from the turn")

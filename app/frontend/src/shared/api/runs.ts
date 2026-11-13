@@ -5,7 +5,11 @@ import {
   resolveByokRoutes,
 } from '@/shared/lib/client_id';
 import type {RunFocus, RunStatus, RunTier} from './wire_common';
-import type {ChatSummary, Interview} from './wire_interviews';
+import type {
+  ChatSummary,
+  Interview,
+  InterviewQuestion,
+} from './wire_interviews';
 import type {Report} from './wire_reports';
 import type {QaSource, Run, RunMessage, RunWithSummary} from './wire_runs';
 import type {
@@ -271,6 +275,9 @@ type InterviewFrame =
   | {type: 'reasoning'; content: string}
   | {type: 'chunk'; content: string}
   | {type: 'phase'; content: InterviewPhase}
+  // The turn's questions, sent as soon as they are written and before the
+  // turn itself is saved.
+  | {type: 'questions'; questions: InterviewQuestion[]}
   | {type: 'interview'; interview: Interview}
   | {type: 'error'; detail: string};
 
@@ -278,6 +285,7 @@ export interface InterviewSinks {
   onReasoning?: (fragment: string) => void;
   onProse?: (fragment: string) => void;
   onPhase?: (phase: InterviewPhase) => void;
+  onQuestions?: (questions: InterviewQuestion[]) => void;
 }
 
 async function streamInterviewTurn(
@@ -308,6 +316,9 @@ async function streamInterviewTurn(
         break;
       case 'phase':
         sinks.onPhase?.(frame.content);
+        break;
+      case 'questions':
+        sinks.onQuestions?.(frame.questions);
     }
   }
   if (!interview) {

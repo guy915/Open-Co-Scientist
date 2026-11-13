@@ -51,7 +51,9 @@ describe('run detail learning', () => {
     expect(screen.getByText('Saved finding.')).toBeInTheDocument();
     expect(screen.queryByText(/Supporting evidence/)).toBeNull();
     fireEvent.click(screen.getByRole('button', {name: /Show more/i}));
-    expect(screen.getAllByText(/Saved finding/)[1].textContent).toBe(detail);
+    expect(screen.getAllByText(/Saved finding/)[1].textContent).toBe(
+      detail.trim(),
+    );
   });
 
   const evidence = [

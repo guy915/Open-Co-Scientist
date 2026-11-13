@@ -3,12 +3,15 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from co_scientist.core.citations import strip_citation_keys
 from co_scientist.domains.research_state.claims.chunking import parent_evidence_id
 from co_scientist.domains.research_state.claims.gate import ClaimEdge, EntailmentLabel
 from co_scientist.domains.research_state.entity_names import (
     extract_entity_names,
 )
 from co_scientist.domains.research_state.text_utils import (
+    experiment_plan_lines,
+    first_sentence,
     hypothesis_statement,
     hypothesis_title,
     readable_experiment_summary,
@@ -35,6 +38,22 @@ def _claim_evidence_ids(edge: ClaimEdge, span_key: str = "supporting") -> list[s
     return ids
 
 
+def _hypothesis_topic_text(hypothesis: dict[str, Any]) -> dict[str, str]:
+    """Summary is one sentence; detail is the grounding paragraph, then the
+    pilot plan one step per line. [C*] keys are dropped because this view
+    lists the topic's references on their own.
+    """
+    grounding = strip_citation_keys(str(hypothesis.get("mechanism") or ""))
+    lead = grounding or strip_citation_keys(hypothesis_statement(hypothesis))
+    summary = first_sentence(lead)
+    if summary and not summary.endswith((".", "?", "!")):
+        summary += "."
+    plan = experiment_plan_lines(str(hypothesis.get("experimental_context") or ""))
+    paragraph = grounding or str(hypothesis.get("expected_effect") or "").strip()
+    detail = "\n\n".join(part for part in (paragraph, "\n".join(plan)) if part)
+    return {"summary": summary, "detail": detail}
+
+
 def _knowledge_base_topics(
     hypotheses: list[dict[str, Any]],
     claim_edges: list[ClaimEdge],
@@ -52,11 +71,7 @@ def _knowledge_base_topics(
             {
                 "id": f"topic-{hypothesis_id}",
                 "title": str(hypothesis.get("title") or "Mechanistic finding"),
-                "summary": str(hypothesis.get("mechanism") or hypothesis.get("statement") or ""),
-                "detail": (
-                    readable_experiment_summary(str(hypothesis.get("experimental_context") or ""))
-                    or str(hypothesis.get("expected_effect") or "")
-                ),
+                **_hypothesis_topic_text(hypothesis),
                 "reference_ids": sorted(set(references_by_hypothesis.get(hypothesis_id, []))),
             }
         )

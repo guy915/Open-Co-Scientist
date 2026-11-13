@@ -1,4 +1,8 @@
-import {type RunFocus, type RunTier} from '@/shared/api/runs';
+import {
+  type InterviewPhase,
+  type RunFocus,
+  type RunTier,
+} from '@/shared/api/runs';
 import {type Dispatch, type ReactNode, type SetStateAction} from 'react';
 import {type NavigateFunction} from 'react-router-dom';
 import {type LinkedDraftRecovery, type SpecStage} from './use_chat_session';
@@ -40,6 +44,7 @@ export interface BuildTimelineItemsArgs {
   isAwaitingAgent: boolean;
   agentReasoning: string;
   agentDraft: string;
+  agentPhase: InterviewPhase | null;
   handleCancelDraftSpec: () => void;
   handleRetryDraftSpec: () => void;
   handleStartRun: () => Promise<void>;
@@ -145,6 +150,7 @@ function thinkingTimelineItems({
   isAwaitingAgent,
   agentReasoning,
   agentDraft,
+  agentPhase,
 }: Pick<
   BuildTimelineItemsArgs,
   | 'messages'
@@ -152,6 +158,7 @@ function thinkingTimelineItems({
   | 'isAwaitingAgent'
   | 'agentReasoning'
   | 'agentDraft'
+  | 'agentPhase'
 >): TimelineItem[] {
   if (startedSession || !isAwaitingAgent) return [];
   return [
@@ -166,6 +173,7 @@ function thinkingTimelineItems({
           reasoning={agentReasoning}
           live
           streaming
+          phase={agentPhase}
         />
       ),
     },

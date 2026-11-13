@@ -53,8 +53,10 @@ ready and asks nothing more.
 - ``questions`` holds the question the turn ends on, if any, as clickable \
 answers: the ``question`` in the turn's own words, a two-or-three word \
 ``header``, {MIN_OPTIONS} to {MAX_OPTIONS} ``options`` each with a short \
-``label`` and a one-line ``description``, and ``multi_select``. Return an \
-empty list when the turn asks nothing. Never invent a question.
+``label``, a one-line ``description`` and ``recommended`` (true on the \
+answer the turn leans towards: exactly one unless ``multi_select``), and \
+``multi_select``. Return an empty list when the turn asks nothing. Never \
+invent a question.
 """
 
 

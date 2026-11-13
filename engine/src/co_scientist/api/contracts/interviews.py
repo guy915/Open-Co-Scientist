@@ -23,6 +23,8 @@ class InterviewQuestionOption(TypedDict):
 
     label: str
     description: str
+    # Turns stored before recommendations existed carry no flag.
+    recommended: NotRequired[bool]
 
 
 @with_config(ConfigDict(extra="allow"))

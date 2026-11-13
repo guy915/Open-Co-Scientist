@@ -88,6 +88,7 @@ def _patch_model_sequence(monkeypatch: pytest.MonkeyPatch, responses: list[dict[
         _interview: dict[str, Any],
         _on_reasoning: Any = None,
         _on_prose: Any = None,
+        _on_phase: Any = None,
     ) -> dict[str, Any]:
         return next(replies)
 
@@ -107,6 +108,7 @@ def _patch_model_failing_after(
         _interview: dict[str, Any],
         _on_reasoning: Any = None,
         _on_prose: Any = None,
+        _on_phase: Any = None,
     ) -> dict[str, Any]:
         try:
             return next(replies)

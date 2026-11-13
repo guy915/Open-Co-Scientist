@@ -15,9 +15,10 @@ logger = logging.getLogger(__name__)
 # Question count stays bounded even when model output ignores instructions.
 MAX_QUESTIONS = 3
 
-# Options need readable labels while remaining within token bounds.
+# Options need readable labels while remaining within token bounds; more than
+# four choices (plus the free-text answer) is too many to scan.
 MIN_OPTIONS = 2
-MAX_OPTIONS = 6
+MAX_OPTIONS = 4
 
 
 def _text(raw: Any) -> str:
@@ -25,23 +26,42 @@ def _text(raw: Any) -> str:
     return raw.strip() if isinstance(raw, str) else ""
 
 
-def _normalized_option(raw: Any) -> dict[str, str] | None:
+def _normalized_option(raw: Any) -> dict[str, Any] | None:
     if not isinstance(raw, dict):
         return None
     label = _text(raw.get("label"))
     if not label:
         return None
-    return {"label": label, "description": _text(raw.get("description"))}
+    return {
+        "label": label,
+        "description": _text(raw.get("description")),
+        "recommended": raw.get("recommended") is True,
+    }
 
 
-def _normalized_options(raw: Any) -> list[dict[str, str]]:
+def _with_recommendation(options: list[dict[str, Any]], multi_select: bool) -> list[dict[str, Any]]:
+    """Every question recommends an answer: exactly one for a single-select
+    question, one or more for a multi-select one. A model that names none
+    gets its first option, which the prompt asks it to rank first anyway.
+    """
+    flagged = [index for index, option in enumerate(options) if option["recommended"]]
+    keep = set(flagged if multi_select else flagged[:1]) or {0}
+    return [{**option, "recommended": index in keep} for index, option in enumerate(options)]
+
+
+def _normalized_options(raw: Any) -> list[dict[str, Any]]:
     """Oversized option lists are truncated rather than discarded,
-    preserving usable choices.
+    preserving usable choices; recommended options are kept first.
     """
     if not isinstance(raw, list):
         return []
     options = [option for option in map(_normalized_option, raw) if option]
-    return options[:MAX_OPTIONS]
+    if len(options) > MAX_OPTIONS:
+        recommended = [option for option in options if option["recommended"]]
+        others = [option for option in options if not option["recommended"]]
+        kept = (recommended + others)[:MAX_OPTIONS]
+        options = [option for option in options if option in kept]
+    return options
 
 
 def _normalized_question(raw: Any) -> dict[str, Any] | None:
@@ -51,11 +71,12 @@ def _normalized_question(raw: Any) -> dict[str, Any] | None:
     options = _normalized_options(raw.get("options"))
     if not question or len(options) < MIN_OPTIONS:
         return None
+    multi_select = bool(raw.get("multi_select"))
     return {
         "header": _text(raw.get("header")),
         "question": question,
-        "multi_select": bool(raw.get("multi_select")),
-        "options": options,
+        "multi_select": multi_select,
+        "options": _with_recommendation(options, multi_select),
     }
 
 
@@ -92,7 +113,13 @@ QUESTION_SCHEMA = obj(
         "multi_select": {"type": "boolean"},
         "options": {
             "type": "array",
-            "items": obj({"label": {"type": "string"}, "description": {"type": "string"}}),
+            "items": obj(
+                {
+                    "label": {"type": "string"},
+                    "description": {"type": "string"},
+                    "recommended": {"type": "boolean"},
+                }
+            ),
         },
     }
 )
@@ -108,7 +135,9 @@ it and return the question it ends on as clickable answers.
 - ``header`` is a two-or-three word label for what is being chosen.
 - ``options`` is {min} to {max} answers a scientist could plausibly click, \
 each a short ``label`` and a one-line ``description`` of what choosing it \
-would mean for the work. Where the answer space is open, enumerate the \
+would mean for the work, and ``recommended`` true on the answer the turn \
+leans towards (exactly one when ``multi_select`` is false, one or more when \
+it is true; put it first). Where the answer space is open, enumerate the \
 directions the answer could take rather than guessing at exact values.
 - ``multi_select`` is true when several answers can hold at once and false \
 when they are alternatives.

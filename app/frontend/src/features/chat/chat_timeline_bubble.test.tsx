@@ -2,6 +2,7 @@ import '@/shared/ui/markdown_message_renderer';
 import {fireEvent, screen, render} from '@testing-library/react';
 import {afterEach, expect, test, vi, beforeEach, describe} from 'vitest';
 import {
+  AssistantMessage,
   FALLBACK_NOTICE_TEXT,
   ChatBubble,
   type ChatEntry,
@@ -116,3 +117,30 @@ export function renderBubble(
   );
   return {...utils, onSubmitEdit, onCopyRequest, onRetry, message};
 }
+
+// The reply text can end well before the turn does: name what it is still
+// writing under that text, and stop the "Thinking" animation above it.
+test('a live turn names the question it is still drafting', () => {
+  const {rerender} = render(
+    <AssistantMessage content="Which model?" reasoning="A thought." live />,
+  );
+  expect(screen.queryByText('Drafting question')).toBeNull();
+
+  rerender(
+    <AssistantMessage
+      content="Which model?"
+      reasoning="A thought."
+      live
+      streaming
+      phase="questions"
+    />,
+  );
+
+  const status = screen.getByText('Drafting question');
+  expect(status.closest('[role="status"]')).not.toBeNull();
+  expect(status.closest('[aria-hidden="true"]')).toBeNull();
+  expect(screen.getByText('Thinking').closest('[role="status"]')).toBeNull();
+
+  rerender(<AssistantMessage content="Which model?" phase="questions" />);
+  expect(screen.queryByText('Drafting question')).toBeNull();
+});

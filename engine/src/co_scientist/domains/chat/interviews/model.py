@@ -30,6 +30,13 @@ class InterviewModelUnavailableError(RuntimeError):
 
 OPEN_MARKER = "<run_spec>"
 CLOSE_MARKER = "</run_spec>"
+_QUESTIONS_KEY = '"questions"'
+
+# What the turn is doing once its prose has ended: the scientist sees the
+# reply stop while the state block, and then its questions, are still being
+# written, so the client names that work instead of showing "Thinking".
+PHASE_FINISHING = "finishing"
+PHASE_QUESTIONS = "questions"
 
 
 def _parse_spec_body(body: str) -> dict[str, Any] | None:
@@ -64,12 +71,28 @@ class TurnSplitter:
         self._pending = ""
         self._spec: list[str] = []
         self._in_spec = False
+        self._in_questions = False
         self._prose: list[str] = []
         self._prose_filter = InterviewProse()
+
+    @property
+    def phase(self) -> str:
+        """Empty while prose streams; then finishing, then questions."""
+        if self._in_questions:
+            return PHASE_QUESTIONS
+        return PHASE_FINISHING if self._in_spec else ""
+
+    def _note_questions(self) -> None:
+        # Every chunk carries at least one character, so the key can only
+        # complete within the last len(key) chunks.
+        if not self._in_questions:
+            tail = "".join(self._spec[-len(_QUESTIONS_KEY) :])
+            self._in_questions = _QUESTIONS_KEY in tail
 
     def feed(self, delta: str) -> str:
         if self._in_spec:
             self._spec.append(delta)
+            self._note_questions()
             return ""
         buffer = self._pending + delta
         start = buffer.find(OPEN_MARKER)
@@ -77,6 +100,7 @@ class TurnSplitter:
             self._in_spec = True
             self._pending = ""
             self._spec.append(buffer[start + len(OPEN_MARKER) :])
+            self._note_questions()
             return self._release(buffer[:start])
         held = _held_back_length(buffer)
         self._pending = buffer[len(buffer) - held :] if held else ""
@@ -121,7 +145,7 @@ _FORMAT_PROMPT = (
     "scientist.\n"
     "- The five fields carry the interview's whole current state, not just "
     "what this turn changed. Repeat fields that did not change.\n"
-    "- ``questions`` is the exception: it describes only the question THIS "
+    "- ``questions`` is the exception: it describes only the questions THIS "
     "turn is asking. Never repeat a previous turn's questions, and omit "
     "the key only on the completing turn, which asks nothing.\n"
     "- It is machine-read and never shown to the scientist, so never "
@@ -140,19 +164,28 @@ prose alone:
 
 [{"header": "Model system", "question": "Which model system should the
 ideas be built around?", "multi_select": false, "options": [{"label":
-"Primary human cells", "description": "Closest to patient biology"},
-{"label": "iPSC-derived line", "description": "Renewable and editable"}]}]
+"Primary human cells", "description": "Closest to patient biology",
+"recommended": true}, {"label": "iPSC-derived line", "description":
+"Renewable and editable", "recommended": false}]}]
 
 - ``header`` is a two-or-three word label for what is being chosen.
   ``question`` is the question itself, in full. ``options`` carries two to
-  five answers, each a short ``label`` and a one-line ``description`` of
-  what choosing it would mean for the work.
+  four answers -- never more than four -- each a short ``label`` and a
+  one-line ``description`` of what choosing it would mean for the work.
+  The scientist can always write their own answer as well, so you do not
+  need an "other" option.
+- Every question recommends an answer: set ``recommended`` true on the
+  option you would pick for this goal and false on the rest, and list it
+  first. A single-select question has exactly one recommended option; a
+  multi-select question has one or more.
 - Set ``multi_select`` true when several answers can hold at once (which
   focus areas to prioritize, which exclusions apply) and false when they
   are alternatives (which model system, which readout).
-- Usually one question, matching the one question your prose asks. Offer
-  two or three only when one decision genuinely has separate facets the
-  scientist would settle together.
+- One to three questions per turn, never more than three. Ask two or three
+  whenever the scientist can settle them together -- separate facets of
+  one decision, or independent gaps you would otherwise ask about over
+  several turns -- because that shortens the interview. Your prose asks
+  each of them, in the same order as the array.
 - An open answer space is not a reason to omit the array. Where you cannot
   enumerate the answers, enumerate the *readings*: the two to four
   directions the answer could plausibly take, each as an option a scientist
@@ -210,7 +243,7 @@ capabilities, data, constraints, or preferences.
   scientist, not a form: say what you understood, say what it implies or
   what it rules out, and then ask.
 - ALWAYS invite the conversation forward. Every turn but the completing
-  one ends on a question -- and every question you ask is also carried as
+  one ends on one to three questions -- and every question you ask is also carried as
   clickable answers in the block (see "Offering answers to click"), so the
   scientist can click one instead of writing it out.
 - Use no emoji. These goals routinely concern disease, mortality and human
@@ -218,11 +251,13 @@ capabilities, data, constraints, or preferences.
 
 # Turn taking
 
-Ask about one thing at a time. That governs how many *questions* a turn
-asks -- exactly one -- and never how much you may explain before asking
-it. A turn that reflects the goal back, lays out the distinctions that
-matter, and closes on a single question is correct and is what this
-interview should read like; a bare one-line question is not. Do not pad
+Ask one to three focused questions per turn, never more. That governs how
+many *questions* a turn asks, and never how much you may explain before
+asking them. Group questions the scientist can answer together rather than
+spreading them over several turns. A turn that reflects the goal back,
+lays out the distinctions that matter, and closes on its questions is
+correct and is what this interview should read like; a bare one-line
+question is not. Do not pad
 with filler or restate the scientist's own words back at them as though
 they were your finding, but never strip a reply to one sentence when there
 is substance to give.
@@ -308,7 +343,7 @@ partial; do not treat it as the whole document.
   group: answer it, then guide the conversation back to scoping the goal.
   Carry every field forward unchanged and leave completed false.
 - An empty or contentless turn: say plainly that you need something to
-  work with and repeat the one question you are waiting on. Carry every
+  work with and repeat the questions you are waiting on. Carry every
   field forward unchanged.
 - Approval carrying no new information ("looks good", "that's better"):
   do not read it as new scope. Ask whether anything else should change
@@ -442,12 +477,14 @@ def _interview_request(interview: dict[str, Any]) -> tuple[str, Any]:
 
 ReasoningSink = Callable[[str], Awaitable[None]]
 ProseSink = Callable[[str], Awaitable[None]]
+PhaseSink = Callable[[str], Awaitable[None]]
 
 
 @dataclasses.dataclass(frozen=True)
 class TurnSinks:
     on_reasoning: ReasoningSink | None = None
     on_prose: ProseSink | None = None
+    on_phase: PhaseSink | None = None
 
 
 # Silence is bounded independently of total duration because reasoning can make
@@ -533,7 +570,10 @@ async def _relay_chunk(chunk: Any, splitter: TurnSplitter, sinks: TurnSinks) -> 
     delta = chunk.choices[0].delta
     reasoning = getattr(delta, "reasoning_content", "") or ""
     await _emit(sinks.on_reasoning, reasoning)
+    phase = splitter.phase
     await _emit(sinks.on_prose, splitter.feed(delta.content or ""))
+    if splitter.phase != phase:
+        await _emit(sinks.on_phase, splitter.phase)
     return bool(reasoning.strip())
 
 
@@ -577,10 +617,12 @@ async def _call_interview_model(
     interview: dict[str, Any],
     on_reasoning: ReasoningSink | None = None,
     on_prose: ProseSink | None = None,
+    on_phase: PhaseSink | None = None,
 ) -> dict[str, Any]:
     try:
         prose, fields = await _stream_interview_content(
-            interview, TurnSinks(on_reasoning=on_reasoning, on_prose=on_prose)
+            interview,
+            TurnSinks(on_reasoning=on_reasoning, on_prose=on_prose, on_phase=on_phase),
         )
     except Exception as exc:
         logger.warning("Interview model failed: %s", exc)
@@ -588,6 +630,7 @@ async def _call_interview_model(
             "The interview Agent is temporarily unavailable."
         ) from exc
     if fields is None and prose.strip():
+        await _emit(on_phase, PHASE_FINISHING)
         fields = await repair_turn_state(interview, prose)
         if fields is not None:
             logger.info("Recovered a missing interview state block from the turn")

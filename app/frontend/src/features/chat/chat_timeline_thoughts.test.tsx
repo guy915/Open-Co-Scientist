@@ -55,19 +55,26 @@ test('announces the live label only, never the raw chain of thought', () => {
   expect(screen.getByText('A thought.').closest('[aria-live]')).toBeNull();
 });
 
-test('keeps pending thinking non-interactive until readable reasoning arrives', () => {
+// The pending label is the very element the reasoning later opens, so the
+// turn never swaps one look of "Thinking" for another.
+test('shows the same thinking toggle before and after reasoning arrives', () => {
   const {rerender} = render(<ThoughtsDisclosure live />);
 
-  expect(screen.getByText('Thinking')).toBeInTheDocument();
-  expect(screen.queryByRole('button')).toBeNull();
+  const pending = screen.getByRole('button', {name: /Thinking/});
 
   rerender(<ThoughtsDisclosure live reasoning="   " />);
 
-  expect(screen.getByText('Thinking')).toBeInTheDocument();
-  expect(screen.queryByRole('button')).toBeNull();
+  expect(screen.getByRole('button', {name: /Thinking/})).toBe(pending);
 
   rerender(<ThoughtsDisclosure live reasoning="A readable thought." />);
 
-  expect(screen.getByRole('button')).toHaveAttribute('aria-expanded', 'true');
+  expect(screen.getByRole('button', {name: /Thinking/})).toBe(pending);
+  expect(pending).toHaveAttribute('aria-expanded', 'true');
   expect(screen.getByText('A readable thought.')).toBeInTheDocument();
+});
+
+test('stops animating the thinking label once the turn has moved on', () => {
+  render(<ThoughtsDisclosure live settled reasoning="A thought." />);
+
+  expect(screen.getByText('Thinking').closest('[role="status"]')).toBeNull();
 });

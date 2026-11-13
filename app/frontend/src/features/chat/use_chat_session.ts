@@ -11,7 +11,11 @@ import {
 } from 'react';
 import {buildChatHandlers} from './chat_session_handlers';
 import type {InferredRunSpec} from '@/shared/lib/run_spec';
-import type {Interview, StagedDocument} from '@/shared/api/runs';
+import type {
+  Interview,
+  InterviewPhase,
+  StagedDocument,
+} from '@/shared/api/runs';
 import type {ChatEntry} from './chat_timeline_bubble';
 import type {StartedSession} from './chat_timeline_run_spec_card';
 import type {ToastSetter} from '@/shared/hooks/timers';
@@ -28,6 +32,8 @@ export interface SessionState {
   isAwaitingAgent: boolean;
   agentReasoning: string;
   agentDraft: string;
+  // Set once the reply text has ended and the turn is still finishing.
+  agentPhase: InterviewPhase | null;
   error: string | null;
   pendingAttachments: StagedDocument[];
 }
@@ -47,6 +53,7 @@ export function initialSessionState(): SessionState {
     isAwaitingAgent: false,
     agentReasoning: '',
     agentDraft: '',
+    agentPhase: null,
     error: null,
     pendingAttachments: [],
   };
@@ -152,6 +159,7 @@ export function useChatSession(deps: ChatSessionDeps) {
     isAwaitingAgent: state.isAwaitingAgent,
     agentReasoning: state.agentReasoning,
     agentDraft: state.agentDraft,
+    agentPhase: state.agentPhase,
     error: state.error,
     ...setters,
     ...handlers,

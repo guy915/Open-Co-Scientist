@@ -22,6 +22,8 @@ const ICONS = {
   check: 'check',
   // Chessboard glyph — the reference's "Playing tournament" progress step.
   chess: 'chess',
+  chevron_left: 'chevron_left',
+  chevron_right: 'chevron_right',
   close: 'close',
   computer: 'computer',
   content_copy: 'content_copy',

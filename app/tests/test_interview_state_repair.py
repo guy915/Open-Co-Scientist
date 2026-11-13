@@ -40,8 +40,16 @@ _REPAIRED_STATE = {
             "question": "Which model system should we use?",
             "multi_select": False,
             "options": [
-                {"label": "Primary cells", "description": "Closest to patients"},
-                {"label": "Mouse model", "description": "Whole-organ context"},
+                {
+                    "label": "Primary cells",
+                    "description": "Closest to patients",
+                    "recommended": True,
+                },
+                {
+                    "label": "Mouse model",
+                    "description": "Whole-organ context",
+                    "recommended": False,
+                },
             ],
         }
     ],
@@ -130,3 +138,51 @@ def test_an_offered_question_without_options_still_warns(
     with caplog.at_level(logging.WARNING):
         assert normalized_questions([lone]) == []
     assert "offered 1 question(s), none usable" in caplog.text
+
+
+def _options(*flags: bool | None) -> list[dict[str, Any]]:
+    options: list[dict[str, Any]] = []
+    for index, flag in enumerate(flags):
+        option: dict[str, Any] = {"label": f"Option {index}", "description": ""}
+        if flag is not None:
+            option["recommended"] = flag
+        options.append(option)
+    return options
+
+
+def _recommended(question: dict[str, Any]) -> list[str]:
+    return [option["label"] for option in question["options"] if option["recommended"]]
+
+
+def test_a_question_offers_at_most_four_options_and_keeps_the_recommended_one() -> None:
+    raw = {"question": "Which?", "options": _options(False, False, False, False, False, True)}
+
+    (question,) = normalized_questions([raw])
+
+    labels = [option["label"] for option in question["options"]]
+    assert labels == ["Option 0", "Option 1", "Option 2", "Option 5"]
+    assert _recommended(question) == ["Option 5"]
+
+
+def test_a_single_select_question_recommends_exactly_one_option() -> None:
+    unflagged = {"question": "Which?", "options": _options(None, None, None)}
+    doubled = {"question": "Which two?", "options": _options(False, True, True)}
+
+    first, second = normalized_questions([unflagged, doubled])
+
+    assert _recommended(first) == ["Option 0"]
+    assert _recommended(second) == ["Option 1"]
+
+
+def test_a_multi_select_question_may_recommend_several_options() -> None:
+    raw = {"question": "Which?", "multi_select": True, "options": _options(True, False, True)}
+
+    (question,) = normalized_questions([raw])
+
+    assert _recommended(question) == ["Option 0", "Option 2"]
+
+
+def test_a_turn_offers_at_most_three_questions() -> None:
+    raw = [{"question": f"Q{index}?", "options": _options(None, None)} for index in range(5)]
+
+    assert [question["question"] for question in normalized_questions(raw)] == ["Q0?", "Q1?", "Q2?"]

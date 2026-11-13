@@ -263,15 +263,21 @@ export async function getReport(id: string): Promise<Report | null> {
   return parseJson<Report>(res);
 }
 
+// After the reply text ends, the turn still writes its state and then its
+// questions; the server names which so the client can say so.
+export type InterviewPhase = 'finishing' | 'questions';
+
 type InterviewFrame =
   | {type: 'reasoning'; content: string}
   | {type: 'chunk'; content: string}
+  | {type: 'phase'; content: InterviewPhase}
   | {type: 'interview'; interview: Interview}
   | {type: 'error'; detail: string};
 
 export interface InterviewSinks {
   onReasoning?: (fragment: string) => void;
   onProse?: (fragment: string) => void;
+  onPhase?: (phase: InterviewPhase) => void;
 }
 
 async function streamInterviewTurn(
@@ -299,6 +305,9 @@ async function streamInterviewTurn(
         break;
       case 'chunk':
         sinks.onProse?.(frame.content);
+        break;
+      case 'phase':
+        sinks.onPhase?.(frame.content);
     }
   }
   if (!interview) {

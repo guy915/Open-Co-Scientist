@@ -3,9 +3,9 @@ import {
   type InterviewQuestion,
   type InterviewTurn,
 } from '@/shared/api/runs';
-import {useState} from 'react';
+import {type ReactNode, useState} from 'react';
 import {Icon} from '@/shared/ui/icon';
-import {Button, IconButton, TextField} from '@/shared/ui';
+import {Button, Chip, IconButton, TextField} from '@/shared/ui';
 import {joinClasses} from '@/shared/ui/classes';
 import {MarkdownMessage} from '@/shared/ui/markdown_message';
 import {
@@ -144,22 +144,30 @@ export interface QuestionChooserProps {
 }
 
 // Selection never sends a turn; the chooser owns commit. Remount on turn id to
-// reset selections and dismissal. Only the options scroll, and only past a
-// height a typical question fits within on desktop (dvh follows the Safari
-// toolbar on phones); the head stays outside the scroller so its tooltips
-// cannot widen it into a horizontal scrollbar.
+// reset selections and dismissal. Several questions show one at a time, as
+// tabs the scientist steps through, never as one scrolling stack. Only the
+// options scroll, and only past a height a typical question fits within on
+// desktop (dvh follows the Safari toolbar on phones); the head stays outside
+// the scroller so its tooltips cannot widen it into a horizontal scrollbar.
 export function QuestionChooser({questions, onAnswer}: QuestionChooserProps) {
   const [selections, setSelections] = useState(emptySelections);
+  const [active, setActive] = useState(0);
   const [minimized, setMinimized] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   if (dismissed) return null;
 
+  const current = Math.min(active, questions.length - 1);
+  const question = questions[current];
   const answer = answerText(questions, selections);
   const sendAnswer = () => onAnswer(answer);
+  // A single-select pick settles its question, so the next one opens.
   const choose = (index: number, label: string) => {
-    setSelections(
-      toggleOption(selections, index, label, questions[index].multi_select),
-    );
+    const next = toggleOption(selections, index, label, question.multi_select);
+    setSelections(next);
+    const picked = (next.chosen[index] ?? []).length > 0;
+    if (!question.multi_select && picked && index < questions.length - 1) {
+      setActive(index + 1);
+    }
   };
 
   return (
@@ -168,17 +176,32 @@ export function QuestionChooser({questions, onAnswer}: QuestionChooserProps) {
       aria-label="Answer options"
     >
       <ChooserHead
-        label={headLabel(questions)}
         answered={answer.length > 0}
         onSend={sendAnswer}
         minimized={minimized}
         onToggleMinimize={() => setMinimized(open => !open)}
         onDismiss={() => setDismissed(true)}
-      />
+      >
+        <QuestionTabs
+          questions={questions}
+          selections={selections}
+          active={current}
+          onSelect={setActive}
+        />
+      </ChooserHead>
       {!minimized && (
-        <div className="grid max-h-[min(18rem,40dvh)] min-w-0 gap-2.5 overflow-x-hidden overflow-y-auto overscroll-contain above-phone:max-h-[min(36rem,70dvh)]">
-          <ChooserBody
-            questions={questions}
+        <div
+          id={questionPanelId(current)}
+          role={questions.length > 1 ? 'tabpanel' : undefined}
+          aria-labelledby={
+            questions.length > 1 ? questionTabId(current) : undefined
+          }
+          className="grid max-h-[min(18rem,40dvh)] min-w-0 gap-2.5 overflow-x-hidden overflow-y-auto overscroll-contain above-phone:max-h-[min(36rem,70dvh)]"
+        >
+          <QuestionGroup
+            key={current}
+            question={question}
+            index={current}
             selections={selections}
             setSelections={setSelections}
             onChoose={choose}
@@ -189,23 +212,128 @@ export function QuestionChooser({questions, onAnswer}: QuestionChooserProps) {
   );
 }
 
-function headLabel(questions: InterviewQuestion[]): string {
-  return questions
-    .map(question => question.header || question.question)
-    .join(' · ');
+function questionLabel(question: InterviewQuestion): string {
+  return question.header || question.question;
+}
+
+function questionTabId(index: number): string {
+  return `question-tab-${index}`;
+}
+
+function questionPanelId(index: number): string {
+  return `question-panel-${index}`;
+}
+
+const HEAD_LABEL_CLASSES =
+  'min-w-0 truncate text-[0.82rem] font-medium tracking-[0.04em] uppercase';
+
+const TAB_KEY_STEPS: Record<string, number> = {ArrowLeft: -1, ArrowRight: 1};
+
+// One question keeps a plain label; several become tabs with arrows either
+// side, so the scientist steps between them instead of scrolling.
+function QuestionTabs({
+  questions,
+  selections,
+  active,
+  onSelect,
+}: {
+  questions: InterviewQuestion[];
+  selections: QuestionSelections;
+  active: number;
+  onSelect: (index: number) => void;
+}) {
+  if (questions.length === 1) {
+    return (
+      <span className={joinClasses(HEAD_LABEL_CLASSES, 'text-cosci-muted')}>
+        {questionLabel(questions[0])}
+      </span>
+    );
+  }
+  return (
+    <div className="flex min-w-0 flex-1 items-center gap-0.5">
+      <IconButton
+        label="Previous question"
+        icon="chevron_left"
+        disabled={active === 0}
+        onClick={() => onSelect(active - 1)}
+      />
+      <div
+        role="tablist"
+        aria-label="Questions"
+        className="flex min-w-0 items-center gap-1 overflow-x-auto [scrollbar-width:none]"
+        onKeyDown={event => {
+          const step = TAB_KEY_STEPS[event.key];
+          const next = active + (step ?? 0);
+          if (!step || next < 0 || next >= questions.length) return;
+          event.preventDefault();
+          onSelect(next);
+          document.getElementById(questionTabId(next))?.focus();
+        }}
+      >
+        {questions.map((question, index) => (
+          <QuestionTab
+            key={index}
+            index={index}
+            label={questionLabel(question)}
+            selected={index === active}
+            answered={answerParts(selections, index).length > 0}
+            onSelect={() => onSelect(index)}
+          />
+        ))}
+      </div>
+      <IconButton
+        label="Next question"
+        icon="chevron_right"
+        disabled={active === questions.length - 1}
+        onClick={() => onSelect(active + 1)}
+      />
+    </div>
+  );
+}
+
+function QuestionTab({
+  index,
+  label,
+  selected,
+  answered,
+  onSelect,
+}: {
+  index: number;
+  label: string;
+  selected: boolean;
+  answered: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <Button
+      variant={selected ? 'tonal' : 'text'}
+      size="sm"
+      icon={answered ? 'check' : undefined}
+      role="tab"
+      id={questionTabId(index)}
+      aria-selected={selected}
+      aria-controls={selected ? questionPanelId(index) : undefined}
+      tabIndex={selected ? 0 : -1}
+      // Phones have room for the open tab only; the arrows reach the others.
+      layoutClassName={selected ? 'min-w-0' : 'shrink-0 phone:hidden'}
+      onClick={onSelect}
+    >
+      <span className="min-w-0 truncate">{label}</span>
+    </Button>
+  );
 }
 
 // One send commits every question's answer, so it sits in the head rather
 // than beside any single question's field.
 function ChooserHead({
-  label,
+  children,
   answered,
   onSend,
   minimized,
   onToggleMinimize,
   onDismiss,
 }: {
-  label: string;
+  children: ReactNode;
   answered: boolean;
   onSend: () => void;
   minimized: boolean;
@@ -214,9 +342,7 @@ function ChooserHead({
 }) {
   return (
     <div className="flex min-w-0 items-center justify-between gap-2.5">
-      <span className="min-w-0 truncate text-[0.82rem] font-medium tracking-[0.04em] uppercase text-cosci-muted">
-        {label}
-      </span>
+      {children}
       <div className="flex shrink-0 items-center gap-0.5">
         <Button
           size="sm"
@@ -226,7 +352,8 @@ function ChooserHead({
           disabled={!answered}
           onClick={onSend}
         >
-          Send
+          {/* Phones keep the room for the question tabs. */}
+          <span className="phone:sr-only">Send</span>
         </Button>
         <IconButton
           label={minimized ? 'Show the questions' : 'Minimize the questions'}
@@ -240,31 +367,6 @@ function ChooserHead({
         />
       </div>
     </div>
-  );
-}
-
-interface ChooserBodyProps {
-  questions: InterviewQuestion[];
-  selections: QuestionSelections;
-  setSelections: (selections: QuestionSelections) => void;
-  onChoose: (index: number, label: string) => void;
-}
-
-function ChooserBody(props: ChooserBodyProps) {
-  const {questions, selections, setSelections, onChoose} = props;
-  return (
-    <>
-      {questions.map((question, index) => (
-        <QuestionGroup
-          key={question.question}
-          question={question}
-          index={index}
-          selections={selections}
-          setSelections={setSelections}
-          onChoose={onChoose}
-        />
-      ))}
-    </>
   );
 }
 
@@ -289,6 +391,7 @@ function QuestionGroup(props: QuestionGroupProps) {
             key={option.label}
             label={option.label}
             description={option.description}
+            recommended={option.recommended === true}
             multiSelect={question.multi_select}
             selected={(selections.chosen[index] ?? []).includes(option.label)}
             onSelect={() => onChoose(index, option.label)}
@@ -374,6 +477,7 @@ function AnswerMarker({
 interface AnswerRowProps {
   label: string;
   description: string;
+  recommended: boolean;
   multiSelect: boolean;
   selected: boolean;
   onSelect: () => void;
@@ -382,7 +486,8 @@ interface AnswerRowProps {
 // Clicks can unpick a selected radio; a radio input does not fire change for
 // that.
 function AnswerRow(props: AnswerRowProps) {
-  const {label, description, multiSelect, selected, onSelect} = props;
+  const {label, description, recommended, multiSelect, selected, onSelect} =
+    props;
   return (
     <label
       className={joinClasses(QUESTION_OPTION_ROW_CLASSES, 'cursor-pointer')}
@@ -397,9 +502,16 @@ function AnswerRow(props: AnswerRowProps) {
       <AnswerMarker multiSelect={multiSelect} selected={selected} />
       {/* The description always takes its own line under the label. */}
       <span className="grid min-w-0 gap-0.5">
-        <strong className="min-w-0 text-base leading-[1.2] font-bold">
-          <MarkdownMessage content={label} inline />
-        </strong>
+        <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
+          <strong className="min-w-0 text-base leading-[1.2] font-bold">
+            <MarkdownMessage content={label} inline />
+          </strong>
+          {recommended && (
+            <Chip tone="accent" size="xs">
+              Recommended
+            </Chip>
+          )}
+        </span>
         {description && (
           <small className="min-w-0 text-[0.92rem] leading-[1.3] text-cosci-muted">
             <MarkdownMessage content={description} inline />

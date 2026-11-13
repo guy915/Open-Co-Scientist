@@ -20,7 +20,8 @@ import {
   responseActions,
   type MessageAction,
 } from './chat_timeline_message_actions';
-import {ThoughtsDisclosure} from './chat_timeline_thoughts';
+import {ThoughtsDisclosure, TurnPhaseStatus} from './chat_timeline_thoughts';
+import type {InterviewPhase} from '@/shared/api/runs';
 import {prefersReducedMotion} from '@/shared/lib/reduced_motion';
 
 const CHAT_BUBBLE_USER_ROW_CLASSES =
@@ -76,7 +77,14 @@ export interface AssistantMessageProps {
   attachment?: ReactNode;
   actions?: MessageAction[];
   anchorId?: string;
+  // What a live turn is still doing after its reply text has ended.
+  phase?: InterviewPhase | null;
 }
+
+const PHASE_LABELS: Record<InterviewPhase, string> = {
+  finishing: 'Finishing up',
+  questions: 'Drafting question',
+};
 
 // Anchor the actual turn top rather than guessing scroll offsets.
 export const TIMELINE_ANCHOR_ATTRIBUTE = 'data-timeline-anchor';
@@ -98,6 +106,7 @@ export function AssistantMessage({
   attachment,
   actions,
   anchorId,
+  phase,
 }: AssistantMessageProps) {
   const Row: 'section' | 'div' = ariaLabel ? 'section' : 'div';
   return (
@@ -111,6 +120,7 @@ export function AssistantMessage({
         <ThoughtsDisclosure
           reasoning={reasoning}
           live={live}
+          settled={Boolean(live && phase)}
           answering={Boolean(live && content)}
         />
         <div
@@ -123,6 +133,9 @@ export function AssistantMessage({
           />
           {attachment}
         </div>
+        {/* Outside the bubble, which hides partial prose from assistive
+            technology while it streams; the status itself must be heard. */}
+        {live && phase && <TurnPhaseStatus label={PHASE_LABELS[phase]} />}
       </div>
       <TurnActions actions={actions} />
     </Row>

@@ -49,6 +49,8 @@ export interface InterviewQuestion {
 export interface InterviewQuestionOption {
   label: string;
   description: string;
+  // Turns stored before recommendations existed carry no flag.
+  recommended?: boolean;
 }
 
 export interface InterviewTurn {

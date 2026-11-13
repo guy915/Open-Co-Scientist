@@ -71,12 +71,16 @@ and HTTP-client integrations would attach prompts and model output.
 Two sources answer "how many people use it":
 
 - **Page views.** Cloudflare Web Analytics counts visits without cookies.
-  Create a site for `open-coscientist.com` under Analytics & Logs > Web
-  Analytics, then set its public token as `VITE_CF_WEB_ANALYTICS_TOKEN` in the
-  Worker's build variables. The frontend reads it at build time and loads the
-  beacon after the first view; unset, it loads nothing. `_headers` allows
+  Production uses automatic setup: the `open-coscientist.com` site under
+  Analytics & Logs > Web Analytics is set to "Enable" (EU included), and
+  Cloudflare injects the beacon at the edge. This also lets the zone's
+  one-click "Speed optimizations" toggle turn on; it fails while the site is
+  in JS snippet mode. Keep `VITE_CF_WEB_ANALYTICS_TOKEN` unset in the
+  Worker's build variables, or each view loads two beacons and counts twice.
+  Set that variable only on a host without edge injection; the frontend then
+  loads the beacon itself after the first view. `_headers` allows
   `static.cloudflareinsights.com` (script) and `cloudflareinsights.com`
-  (reports).
+  (reports); the injected beacon reports to same-origin `/cdn-cgi/rum`.
 - **Product use.** `GET /api/usage?days=30` with `X-Logs-Token` returns
   distinct browsers, chats started and runs created per UTC day, from the
   `interviews` and `runs` tables. A browser is one ownership ID: a person on

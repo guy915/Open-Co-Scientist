@@ -1,5 +1,6 @@
 import {
   type Interview,
+  type InterviewPhase,
   type InterviewSinks,
   type QaSource,
   type StagedDocument,
@@ -116,6 +117,7 @@ async function submitComposerMessage(deps: SubmitComposerDeps): Promise<void> {
     isAwaitingAgent: true,
     agentReasoning: '',
     agentDraft: '',
+    agentPhase: null,
   });
   const sinks = {
     onReasoning: (fragment: string) =>
@@ -124,6 +126,7 @@ async function submitComposerMessage(deps: SubmitComposerDeps): Promise<void> {
       })),
     onProse: (fragment: string) =>
       deps.update(current => ({agentDraft: current.agentDraft + fragment})),
+    onPhase: (phase: InterviewPhase) => deps.update({agentPhase: phase}),
   };
   const isFirstTurn = deps.state.interview === null;
   const signal = beginTurnAbort(deps);
@@ -253,7 +256,12 @@ function describeSubmitError(error: unknown): string {
 // Clear streamed text with its awaiting flag; otherwise starting research can
 // reshow the previous interview reply as a new bubble.
 function settleTurn(deps: Pick<HandlerDeps, 'update'>): void {
-  deps.update({agentReasoning: '', agentDraft: '', isAwaitingAgent: false});
+  deps.update({
+    agentReasoning: '',
+    agentDraft: '',
+    agentPhase: null,
+    isAwaitingAgent: false,
+  });
 }
 
 // Stopped interview streams leave no durable draft; resync committed server
@@ -262,7 +270,7 @@ async function recoverFromStoppedTurn(
   deps: Pick<HandlerDeps, 'update'>,
   interviewId: string | undefined,
 ): Promise<void> {
-  deps.update({agentReasoning: '', agentDraft: ''});
+  deps.update({agentReasoning: '', agentDraft: '', agentPhase: null});
   if (!interviewId) return;
   const updated = await getInterview(interviewId);
   applyInterview(deps.update, updated);
@@ -322,6 +330,7 @@ async function runAskRequest(
     isAwaitingAgent: true,
     agentReasoning: '',
     agentDraft: '',
+    agentPhase: null,
   });
   const {sinks, result} = buildAskSinks(deps);
   const signal = beginTurnAbort(deps);
@@ -377,6 +386,7 @@ async function reviseInterviewTurn(
     isAwaitingAgent: true,
     agentReasoning: '',
     agentDraft: '',
+    agentPhase: null,
   });
   deps.services.setToast(null);
   const signal = beginTurnAbort(deps);
@@ -389,6 +399,7 @@ async function reviseInterviewTurn(
           })),
         onProse: fragment =>
           deps.update(current => ({agentDraft: current.agentDraft + fragment})),
+        onPhase: phase => deps.update({agentPhase: phase}),
       },
       signal,
     );

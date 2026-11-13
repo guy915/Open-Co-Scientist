@@ -111,6 +111,7 @@ export function baseArgs(
     isAwaitingAgent: false,
     agentReasoning: '',
     agentDraft: '',
+    agentPhase: null,
     handleCancelDraftSpec: vi.fn(),
     handleRetryDraftSpec: vi.fn(),
     handleStartRun: vi.fn().mockResolvedValue(undefined),

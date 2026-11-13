@@ -15,6 +15,8 @@ from co_scientist.api.auth import client_id
 from co_scientist.api.documents_access import resolve_owned_documents
 from co_scientist.core import byok_scope
 from co_scientist.domains.chat.interviews.model import (
+    PHASE_QUESTIONS,
+    PhaseSink,
     ProseSink,
     ReasoningSink,
     _essentials_ready,
@@ -93,14 +95,15 @@ async def advance_turn(
     interview_id: str,
     on_reasoning: ReasoningSink | None = None,
     on_prose: ProseSink | None = None,
+    on_phase: PhaseSink | None = None,
 ) -> dict[str, Any]:
     interview = store.get_interview(interview_id)
     assert interview is not None
     started = time.perf_counter()
     sink, fragments = _reasoning_capture(on_reasoning)
-    response, used_fallback = await _run_interview_turn(interview, sink, on_prose)
+    response, used_fallback = await _run_interview_turn(interview, sink, on_prose, on_phase)
     turn = await _with_repaired_questions(
-        _resolved_turn(response, used_fallback, "".join(fragments))
+        _resolved_turn(response, used_fallback, "".join(fragments)), on_phase
     )
     _persist_interview_turn(interview_id, turn)
     from co_scientist.platform.telemetry.diagnostic_events import log_chat_turn
@@ -145,12 +148,16 @@ def _resolved_turn(response: dict[str, Any], used_fallback: bool, reasoning: str
     )
 
 
-async def _with_repaired_questions(turn: _ResolvedTurn) -> _ResolvedTurn:
+async def _with_repaired_questions(
+    turn: _ResolvedTurn, on_phase: PhaseSink | None = None
+) -> _ResolvedTurn:
     """Repair recovers already-asked prose questions only; it cannot invent
     questions or alter completed turns.
     """
     if turn.questions or turn.completed or turn.fallback:
         return turn
+    if on_phase is not None:
+        await on_phase(PHASE_QUESTIONS)
     questions = await question_repair.repair_questions(turn.message)
     if not questions:
         return turn
@@ -181,12 +188,13 @@ async def _run_interview_turn(
     interview: dict[str, Any],
     on_reasoning: ReasoningSink | None,
     on_prose: ProseSink | None = None,
+    on_phase: PhaseSink | None = None,
 ) -> tuple[dict[str, Any], bool]:
     """Fallback provenance is resolved per turn because credentials or
     provider availability can change.
     """
     try:
-        response = await model._call_interview_model(interview, on_reasoning, on_prose)
+        response = await model._call_interview_model(interview, on_reasoning, on_prose, on_phase)
         return response, False
     except model.InterviewModelUnavailableError as error:
         if not offline_mode():

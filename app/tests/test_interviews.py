@@ -88,8 +88,8 @@ _QUESTIONS = [
         "question": "Which model system should the ideas be built around?",
         "multi_select": False,
         "options": [
-            {"label": "Primary human cells", "description": "Closest to"},
-            {"label": "iPSC-derived line", "description": "Renewable"},
+            {"label": "Primary human cells", "description": "Closest to", "recommended": True},
+            {"label": "iPSC-derived line", "description": "Renewable", "recommended": False},
         ],
     }
 ]

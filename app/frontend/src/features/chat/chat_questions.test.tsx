@@ -97,6 +97,62 @@ test('one send in the head answers every question, outside their fields', () => 
   );
 });
 
+test('shows several questions one at a time, as tabs with arrows', () => {
+  renderChooser([MODEL_SYSTEM, EXCLUSIONS]);
+  const previous = screen.getByRole('button', {name: 'Previous question'});
+  const next = screen.getByRole('button', {name: 'Next question'});
+
+  expect(screen.getAllByRole('tab').map(tab => tab.textContent)).toEqual([
+    'Model system',
+    'Exclusions',
+  ]);
+  expect(screen.getByText(MODEL_SYSTEM.question)).toBeTruthy();
+  expect(screen.queryByText(EXCLUSIONS.question)).toBeNull();
+  expect(previous).toHaveProperty('disabled', true);
+
+  fireEvent.click(next);
+
+  expect(screen.queryByText(MODEL_SYSTEM.question)).toBeNull();
+  expect(screen.getByText(EXCLUSIONS.question)).toBeTruthy();
+  expect(screen.getByRole('tab', {name: 'Exclusions'})).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  expect(next).toHaveProperty('disabled', true);
+
+  fireEvent.click(screen.getByRole('tab', {name: 'Model system'}));
+
+  expect(screen.getByText(MODEL_SYSTEM.question)).toBeTruthy();
+});
+
+test('a single-select pick opens the next question and keeps its answer', () => {
+  renderChooser([MODEL_SYSTEM, EXCLUSIONS]);
+
+  fireEvent.click(screen.getByLabelText(/iPSC-derived line/));
+
+  expect(screen.getByText(EXCLUSIONS.question)).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', {name: 'Previous question'}));
+  expect(screen.getByLabelText(/iPSC-derived line/)).toBeChecked();
+});
+
+test('marks the recommended answers', () => {
+  renderChooser([
+    {
+      ...EXCLUSIONS,
+      options: [
+        {label: 'Gene therapy', description: '', recommended: true},
+        {label: 'Devices', description: '', recommended: false},
+      ],
+    },
+  ]);
+
+  const recommended = screen.getByText('Recommended');
+  expect(recommended.closest('label')).toBe(
+    screen.getByLabelText(/Gene therapy/).closest('label'),
+  );
+  expect(screen.getAllByText('Recommended')).toHaveLength(1);
+});
+
 describe('answer state and pending questions', () => {
   const EXCLUSIONS: InterviewQuestion = {
     header: '',

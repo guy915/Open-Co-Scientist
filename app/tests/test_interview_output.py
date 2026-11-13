@@ -224,8 +224,20 @@ def test_sse_exposes_prose_and_reasoning_but_never_question_json(
     assert '"question"' not in prose
     assert prose.strip() == "Which model?"
     assert any(frame == {"type": "reasoning", "content": "Compare models."} for frame in frames)
+    # The reply ends before its state block and questions are written; the
+    # client is told which of the two it is waiting on.
+    phases = [frame["content"] for frame in frames if frame["type"] == "phase"]
+    assert phases == ["finishing", "questions"]
+    # A question that names no recommendation recommends its first option.
     assert _interview_payload(response)["turns"][-1]["questions"] == [
-        {**question, "multi_select": False}
+        {
+            **question,
+            "multi_select": False,
+            "options": [
+                {"label": "Cells", "description": "In vitro", "recommended": True},
+                {"label": "Organoids", "description": "Tissue model", "recommended": False},
+            ],
+        }
     ]
 
 

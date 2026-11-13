@@ -33,7 +33,12 @@ async def _start_stream_advance(
     async def _on_prose(fragment: str) -> None:
         await queue.put(("chunk", fragment))
 
-    task = asyncio.create_task(turns.advance_turn(interview_id, _on_reasoning, _on_prose))
+    async def _on_phase(phase: str) -> None:
+        await queue.put(("phase", phase))
+
+    task = asyncio.create_task(
+        turns.advance_turn(interview_id, _on_reasoning, _on_prose, _on_phase)
+    )
     task.add_done_callback(lambda _: queue.put_nowait(None))
     return queue, task
 

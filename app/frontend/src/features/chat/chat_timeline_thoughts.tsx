@@ -93,34 +93,26 @@ function ThoughtsTrail({trail}: {trail: string}) {
 }
 
 // Live and finished trails mount separately, so seeding from live cannot
-// override a reader's disclosure choice.
+// override a reader's disclosure choice. A live turn shows the same toggle
+// before its first reasoning arrives as after, so the label never changes
+// look mid-turn; it only stops animating once `settled` says the reasoning
+// is over.
 export function ThoughtsDisclosure({
   reasoning,
   live = false,
+  settled = false,
   answering,
 }: {
   reasoning?: string;
   live?: boolean;
+  settled?: boolean;
   answering?: boolean;
 }) {
   const [open, setOpen] = useState(live);
   const panelId = useId();
   const trail = (reasoning ?? '').trim();
   useCollapseOnAnswer(Boolean(answering), setOpen);
-  if (!trail) {
-    if (!live) return null;
-    return (
-      <div className="ucs-thoughts mb-3">
-        <StatusText
-          as="div"
-          layoutClassName="-ml-3 inline-flex min-h-12 items-center gap-1.5 px-3 py-1.5 text-base font-medium"
-        >
-          Thinking
-          <ThinkingDots />
-        </StatusText>
-      </div>
-    );
-  }
+  if (!trail && !live) return null;
   return (
     // Use a button and panel because native details hides content without an
     // animatable transition.
@@ -128,7 +120,7 @@ export function ThoughtsDisclosure({
     // and below the reply reads as one rhythm.
     <div className="ucs-thoughts mb-3">
       <ThoughtsSummary
-        live={live}
+        live={live && !settled}
         open={open}
         panelId={panelId}
         onToggle={() => setOpen(current => !current)}
@@ -147,6 +139,24 @@ export function ThoughtsDisclosure({
           <ThoughtsTrail trail={trail} />
         </div>
       </div>
+    </div>
+  );
+}
+
+// Names the work a turn is still doing after its reply text has ended, under
+// that text where the reader's eye already is.
+export function TurnPhaseStatus({label}: {label: string}) {
+  return (
+    <div className="mt-3">
+      <StatusText
+        as="div"
+        layoutClassName="inline-flex items-center gap-1.5 text-base font-medium"
+      >
+        <span>
+          {label}
+          <ThinkingDots />
+        </span>
+      </StatusText>
     </div>
   );
 }

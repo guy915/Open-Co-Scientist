@@ -7,7 +7,13 @@ import type {
 } from '@/shared/api/runs';
 import {Icon} from '@/shared/ui/icon';
 import {smoothScrollToSection} from '@/shared/lib/smooth_scroll';
-import {useMemo, type MouseEvent, type ReactNode} from 'react';
+import {
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  type MouseEvent,
+  type ReactNode,
+} from 'react';
 import {
   claimEvidenceSummary,
   debateDepthLabel,
@@ -266,6 +272,27 @@ interface DetailSectionsProps {
   claims: ClaimEvidenceRow[];
 }
 
+// A newly selected idea opens at its top. Desktop scrolls the pane itself;
+// stacked and phone layouts scroll the report, so bring the pane's top back
+// into view when the reader had scrolled past it.
+function useScrollToIdeaTop(
+  paneRef: {current: HTMLElement | null},
+  hypothesisId: string,
+) {
+  useLayoutEffect(() => {
+    const pane = paneRef.current;
+    if (!pane) return;
+    pane.scrollTop = 0;
+    const scroller = pane.parentElement?.closest<HTMLElement>(
+      '.cosci-report-scroll',
+    );
+    if (!scroller) return;
+    const offset =
+      pane.getBoundingClientRect().top - scroller.getBoundingClientRect().top;
+    if (offset < 0) scroller.scrollTop += offset;
+  }, [paneRef, hypothesisId]);
+}
+
 function HypothesisDetailSections({
   paneClasses,
   hypothesis,
@@ -274,8 +301,11 @@ function HypothesisDetailSections({
   matchHistory,
   claims,
 }: DetailSectionsProps) {
+  const paneRef = useRef<HTMLElement>(null);
+  useScrollToIdeaTop(paneRef, hypothesis.id);
   return (
     <section
+      ref={paneRef}
       id={DETAIL_PANE_ID}
       className={paneClasses}
       aria-label="Hypothesis detail"

@@ -1,6 +1,6 @@
 import type {ReactElement} from 'react';
 import {it, expect} from 'vitest';
-import {render, screen} from '@testing-library/react';
+import {fireEvent, render, screen} from '@testing-library/react';
 import {MemoryRouter} from 'react-router-dom';
 import {IdeasTab} from './ideas_tab';
 import type {Hypothesis} from '@/shared/api/runs';
@@ -120,4 +120,19 @@ it('marks a screened idea Screened instead of Unverified', () => {
     expect.stringContaining('Screened, not deep-verified'),
   );
   expect(container.querySelectorAll('.idea-unverified-chip')).toHaveLength(0);
+});
+
+it('opens a newly selected idea at its top', () => {
+  const hypotheses: Hypothesis[] = [
+    makeHypothesis({id: 'first', title: 'First idea'}),
+    makeHypothesis({id: 'second', title: 'Second idea'}),
+  ];
+  renderIdeas(<IdeasTab hypotheses={hypotheses} reviews={[]} />);
+  const pane = document.getElementById('hypothesis-detail-pane')!;
+  pane.scrollTop = 400;
+  expect(pane.scrollTop).toBe(400);
+
+  fireEvent.click(screen.getByRole('link', {name: /Second idea/}));
+
+  expect(document.getElementById('hypothesis-detail-pane')!.scrollTop).toBe(0);
 });

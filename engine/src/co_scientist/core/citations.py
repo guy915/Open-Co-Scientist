@@ -5,6 +5,15 @@ _BRACKET_GROUP = re.compile(r"\[([^\[\]]+)\]")
 _CITATION_KEY = re.compile(r"\AC\d+\Z")
 
 
+# A bracket group holding only generation keys, e.g. "[C1]" or "[C6, C7]".
+_CITATION_KEY_GROUP = re.compile(r"\s*\[C\d+(?:\s*,\s*C\d+)*\]")
+
+
+def strip_citation_keys(text: str) -> str:
+    """Remove [C*] keys for views that show references separately."""
+    return _CITATION_KEY_GROUP.sub("", text).strip()
+
+
 def citation_keys_in(text: str, *, allowed_keys: Collection[str] | None = None) -> list[str]:
     # Generation uses C keys; attached sources retain their existing namespace.
     return [

@@ -156,6 +156,34 @@ def test_goal_report_sections_preserve_claim_grounding() -> None:
     assert "Evidence verification" in buckets["non_viable"][0]["reason"]
 
 
+def test_hypothesis_topic_has_one_sentence_summary_and_structured_detail() -> None:
+    hypothesis = {
+        "id": "h1",
+        "title": "Guanfacine in glioblastoma",
+        "statement": "Guanfacine slows glioblastoma growth.",
+        "mechanism": (
+            "Brain exposure is the key filter for glioblastoma drugs [C1]."
+            " Repurposing frameworks were validated [C4]. Organoids capture"
+            " tumour heterogeneity [C6, C7]."
+        ),
+        "experimental_context": (
+            "1. Step 1: Search the literature.\n2. Assemble the panel.\n"
+            "**Go:** SI of 10 or more.\n**No-Go:** SI below 10."
+        ),
+    }
+
+    (topic,) = report_content._knowledge_base_topics([hypothesis], [])
+
+    assert topic["summary"] == "Brain exposure is the key filter for glioblastoma drugs."
+    assert topic["detail"] == (
+        "Brain exposure is the key filter for glioblastoma drugs."
+        " Repurposing frameworks were validated. Organoids capture"
+        " tumour heterogeneity.\n\n"
+        "Step 1: Search the literature.\nStep 2: Assemble the panel.\n"
+        "Go: SI of 10 or more.\nNo-Go: SI below 10."
+    )
+
+
 def test_synthesized_topics_map_only_to_persisted_evidence() -> None:
     overview = {
         "knowledge_base": [

@@ -59,6 +59,29 @@ def readable_experiment_summary(text: str) -> str:
     return " ".join(parts)
 
 
+_STEP_PREFIX = re.compile(r"^Step\s+\d+\b", re.IGNORECASE)
+
+
+def experiment_plan_lines(text: str) -> list[str]:
+    """One line per pilot step and criterion, each step labelled "Step N",
+    so a reader view can show the plan as a list instead of one run-on line.
+    """
+    lines: list[str] = []
+    step = 0
+    for raw in text.splitlines():
+        line = raw.strip()
+        if not line:
+            continue
+        line = line.replace("**Go:**", "Go:").replace("**No-Go:**", "No-Go:")
+        if line.startswith(("Go:", "No-Go:")):
+            lines.append(line)
+            continue
+        step += 1
+        line = _ORDINAL_PREFIX.sub("", line)
+        lines.append(line if _STEP_PREFIX.match(line) else f"Step {step}: {line}")
+    return lines
+
+
 def token_coverage(text: str, reference: str) -> float:
     """Union denominators hide contained short ideas; divide by the derived
     text tokens so true coverage remains detectable across lengths."""

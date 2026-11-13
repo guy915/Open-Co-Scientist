@@ -12,6 +12,7 @@ import {
 } from '@/shared/ui';
 import {splitAbstractSections, capitalizeTerm} from '@/shared/lib/text';
 import {renderInlineHtml} from '@/shared/lib/sanitize_html';
+import {detailBlocks, splitSummary, type DetailBlock} from './learning_text';
 import {
   REPORT_H3_CLASSES,
   REPORT_H4_CLASSES,
@@ -102,6 +103,48 @@ export function LearningView({
   );
 }
 
+function InlineHtml({text}: {text: string}) {
+  // renderInlineHtml sanitizes before this is trusted as HTML.
+  return <span dangerouslySetInnerHTML={{__html: renderInlineHtml(text)}} />;
+}
+
+function DetailBlockView({block}: {block: DetailBlock}) {
+  if (block.kind === 'steps') {
+    return (
+      <ul className="list-disc pl-5">
+        {block.items.map((item, index) => (
+          <li key={index}>
+            <InlineHtml text={item} />
+          </li>
+        ))}
+      </ul>
+    );
+  }
+  if (block.kind === 'criterion') {
+    return (
+      <p>
+        <strong>{block.label}: </strong>
+        <InlineHtml text={block.text} />
+      </p>
+    );
+  }
+  return (
+    <p>
+      <InlineHtml text={block.text} />
+    </p>
+  );
+}
+
+function DetailBody({detail}: {detail: string}) {
+  return (
+    <>
+      {detailBlocks(detail).map((block, index) => (
+        <DetailBlockView key={index} block={block} />
+      ))}
+    </>
+  );
+}
+
 function LearningSectionDetailsBlock({
   detail,
   uncertainty,
@@ -117,11 +160,7 @@ function LearningSectionDetailsBlock({
   return (
     <>
       <h4 className={REPORT_H4_CLASSES}>Details</h4>
-      <p
-        dangerouslySetInnerHTML={{
-          __html: renderInlineHtml(detail),
-        }}
-      />
+      <DetailBody detail={detail} />
       {uncertainty ? (
         <p>
           <strong>Uncertainty: </strong>
@@ -233,13 +272,13 @@ interface LearningSectionItem {
 }
 
 function topicToSection(topic: KnowledgeBaseTopic): LearningSectionItem {
-  const summary = topic.summary.trim();
+  const {summary, detail} = splitSummary(topic.summary.trim(), topic.detail);
   return {
     id: topic.id,
     title: topic.title,
-    summary: summary || detailExcerpt(topic.detail),
-    summaryIsExcerpt: !summary && !!topic.detail.trim(),
-    detail: topic.detail,
+    summary: summary || detailExcerpt(detail),
+    summaryIsExcerpt: !summary && !!detail.trim(),
+    detail,
     uncertainty: topic.uncertainty,
     referenceIds: topic.reference_ids,
   };

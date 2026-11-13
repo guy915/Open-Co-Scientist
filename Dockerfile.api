@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 # Railway bakes engine source at build time; compose installs its mounted checkout at startup.
 # Digest pins keep base images reproducible.
-FROM litestream/litestream:0.5.17-scratch@sha256:f757c70d070ac278d45b8847d31a54ab2de24de5e77b09018c642eca263e3967 AS litestream
+FROM litestream/litestream:0.5.18-scratch@sha256:0ba1cdbb2d0be8876e27b1e646dc031309b7e3928e0ed91503ebaa73ff7e2c5d AS litestream
 
 FROM python:3.12-slim@sha256:646fb0bca3dd3ea1bcc6feb72c17ed16eed6e10cffc732fcc1478bd3e7f02d7b
 

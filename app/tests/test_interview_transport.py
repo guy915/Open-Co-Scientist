@@ -89,7 +89,6 @@ def _capture_model_input(
         _on_reasoning: Any = None,
         _on_prose: Any = None,
         _on_phase: Any = None,
-        _on_questions: Any = None,
     ) -> dict[str, Any]:
         seen.append(interview)
         return reply

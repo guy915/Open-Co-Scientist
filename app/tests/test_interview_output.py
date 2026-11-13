@@ -179,12 +179,12 @@ def test_sse_exposes_prose_and_reasoning_but_never_question_json(
         ],
     }
     fields = {
+        "completed": False,
+        "questions": [question],
         "research_challenge": "Study salt stress",
         "focus_area": [],
         "preferences": [],
         "lab_constraints": [],
-        "completed": False,
-        "questions": [question],
     }
     wire = (
         "Which model?\n"
@@ -224,10 +224,15 @@ def test_sse_exposes_prose_and_reasoning_but_never_question_json(
     assert '"question"' not in prose
     assert prose.strip() == "Which model?"
     assert any(frame == {"type": "reasoning", "content": "Compare models."} for frame in frames)
-    # The reply ends before its state block and questions are written; the
-    # client is told which of the two it is waiting on.
+    # The reply ends before its state block is written: the client hears it
+    # is drafting questions, then gets them as soon as their array closes,
+    # while the rest of the block is still being written.
+    kinds = [frame["type"] for frame in frames if frame["type"] in ("phase", "questions")]
     phases = [frame["content"] for frame in frames if frame["type"] == "phase"]
-    assert phases == ["finishing", "questions"]
+    assert phases == ["questions", "finishing"]
+    assert kinds == ["phase", "questions", "phase"]
+    (early,) = [frame["questions"] for frame in frames if frame["type"] == "questions"]
+    assert early == _interview_payload(response)["turns"][-1]["questions"]
     # A question that names no recommendation recommends its first option.
     assert _interview_payload(response)["turns"][-1]["questions"] == [
         {
@@ -260,3 +265,44 @@ def test_an_ordinary_question_and_answer_json_example_is_preserved() -> None:
     trailing, prose, fields = splitter.finish()
     assert emitted + trailing == prose == text
     assert fields is None
+
+
+def test_the_splitter_names_its_phase_and_reads_questions_before_the_block_ends() -> None:
+    from co_scientist.domains.chat.interviews.model import TurnSplitter
+
+    question = {
+        "header": "Model",
+        "question": "Which model?",
+        "multi_select": False,
+        "options": [
+            {"label": "Cells", "description": "", "recommended": True},
+            {"label": "Organoids", "description": "", "recommended": False},
+        ],
+    }
+    block = json.dumps({"completed": False, "questions": [question], "title": "Salt"})
+    splitter = TurnSplitter()
+    splitter.feed("A few choices settle this.\n<run_spec>")
+    assert splitter.phase == "questions"
+    cut = block.index('"title"')
+    for character in block[:cut]:
+        splitter.feed(character)
+    assert splitter.questions == [question]
+    assert splitter.phase == "finishing"
+
+
+def test_a_completing_block_is_not_drafting_questions() -> None:
+    from co_scientist.domains.chat.interviews.model import TurnSplitter
+
+    splitter = TurnSplitter()
+    splitter.feed('Ready to run.\n<run_spec>{"completed": true, "title": "Salt"')
+    assert splitter.phase == "finishing"
+    assert splitter.questions is None
+
+
+def test_the_prompt_keeps_questions_out_of_the_prose() -> None:
+    from co_scientist.domains.chat.interviews import model
+
+    prompt = model._SYSTEM_PROMPT
+    assert "Do NOT write the questions" in prompt
+    assert "Your prose asks each of them" not in prompt
+    assert "and then ask." not in prompt

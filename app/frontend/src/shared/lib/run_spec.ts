@@ -123,13 +123,34 @@ export const TIER_OPTIONS: RunTierOption[] = [
   },
 ];
 
-// Keyless callers see each tier's free credit cost; a tier above the
-// remaining credits stays selectable and the backend answers 429.
-export function availableTierOptions(): RunTierOption[] {
+// What the caller's free daily allowance is, once the server has said.
+export interface FreeAllowance {
+  limit: number | null;
+  remaining: number | null;
+}
+
+function creditHint(cost: number, allowance?: FreeAllowance | null): string {
+  const limit = allowance?.limit;
+  if (limit === null || limit === undefined)
+    return `Uses ${cost} of your free daily credits.`;
+  const remaining = allowance?.remaining;
+  const left =
+    remaining !== null && remaining !== undefined
+      ? ` ${remaining} left today.`
+      : '';
+  return `Uses ${cost} of your ${limit} free daily credits.${left}`;
+}
+
+// Keyless callers see each tier's free credit cost against their daily total;
+// a tier above the remaining credits stays selectable and the backend answers
+// 429.
+export function availableTierOptions(
+  allowance?: FreeAllowance | null,
+): RunTierOption[] {
   if (keyedProviders().length > 0) return TIER_OPTIONS;
   return TIER_OPTIONS.map(option => ({
     ...option,
-    hint: `Uses ${FREE_TIER_CREDITS[option.id]} of your free daily credits.`,
+    hint: creditHint(FREE_TIER_CREDITS[option.id], allowance),
   }));
 }
 

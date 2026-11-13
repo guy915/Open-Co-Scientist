@@ -6,7 +6,7 @@ import {
   useState,
 } from 'react';
 import {Icon} from '@/shared/ui/icon';
-import {Button, StatusText} from '@/shared/ui';
+import {Button} from '@/shared/ui';
 import {MarkdownMessage} from '@/shared/ui/markdown_message';
 
 function panelStateClasses(open: boolean): string {
@@ -145,18 +145,14 @@ export function ThoughtsDisclosure({
 
 // Names the work a turn is still doing after its reply text has ended, under
 // that text where the reader's eye already is.
+// It reads exactly like the "Thinking" label: same size, weight and colour.
 export function TurnPhaseStatus({label}: {label: string}) {
   return (
-    <div className="mt-3">
-      <StatusText
-        as="div"
-        layoutClassName="inline-flex items-center gap-1.5 text-base font-medium"
-      >
-        <span>
-          {label}
-          <ThinkingDots />
-        </span>
-      </StatusText>
+    <div className="mt-2 flex min-h-12 items-center text-base font-medium text-button-text-fg">
+      <span role="status" aria-live="polite">
+        {label}
+        <ThinkingDots />
+      </span>
     </div>
   );
 }

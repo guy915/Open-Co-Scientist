@@ -82,8 +82,8 @@ export interface AssistantMessageProps {
 }
 
 const PHASE_LABELS: Record<InterviewPhase, string> = {
-  finishing: 'Finishing up',
-  questions: 'Drafting question',
+  finishing: 'Updating the research plan',
+  questions: 'Drafting questions',
 };
 
 // Anchor the actual turn top rather than guessing scroll offsets.

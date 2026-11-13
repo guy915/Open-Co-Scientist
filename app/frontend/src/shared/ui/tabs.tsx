@@ -11,7 +11,7 @@ import {joinClasses} from './cx';
 // instead of one background vanishing and another appearing. The track
 // measures (not the thumb): a child's layout effect runs before its parent's
 // ref is attached.
-function SlidingThumb({
+export function SlidingThumb({
   box,
   className,
   children,

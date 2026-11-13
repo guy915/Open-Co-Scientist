@@ -414,6 +414,15 @@ body {
   margin: 0;
 }
 
+/* A chat scrolls inside its own timeline. If anything in it overflows the
+   shell, even for a moment while a turn streams, the page itself must not
+   become scrollable: a wheel past the timeline's end would otherwise move
+   the whole shell and leave an empty band under the composer. */
+html:has(.reference-chat-timeline) {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
 .public-prerender {
   color: var(--cosci-text);
 }

@@ -80,17 +80,18 @@ def _normalized_question(raw: Any) -> dict[str, Any] | None:
     }
 
 
-def normalized_questions(raw: Any) -> list[dict[str, Any]]:
+def normalized_questions(raw: Any, *, warn: bool = True) -> list[dict[str, Any]]:
     if raw is None:
         return []
     if not isinstance(raw, list):
-        logger.warning("Interview questions block is not a list; dropping it")
+        if warn:
+            logger.warning("Interview questions block is not a list; dropping it")
         return []
     questions = [q for q in map(_normalized_question, raw) if q]
     # Repair answers "the turn asks nothing" with an empty question; that is
     # not an offered question and must not raise a warning.
     offered = [q for q in raw if not _is_empty_question(q)]
-    if offered and not questions:
+    if warn and offered and not questions:
         # Invalid options are logged because otherwise lost prose questions are
         # invisible to operators.
         logger.warning(

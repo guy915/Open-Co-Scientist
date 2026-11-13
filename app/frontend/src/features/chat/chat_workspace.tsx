@@ -30,7 +30,7 @@ import {useChatRehydration} from './use_chat_rehydrate';
 import {type ConnectorToggleProps, Composer} from './chat_composer';
 import {HomeStage} from './chat_home_stage';
 import type {StartedSession} from './chat_timeline_run_spec_card';
-import {pendingQuestions} from './chat_questions';
+import {pendingQuestions, questionsKey} from './chat_questions';
 import {QuestionChooser} from './chat_questions';
 import {
   buildTimelineItems,
@@ -366,6 +366,7 @@ interface ConversationViewProps {
     | 'handleStop'
     | 'interview'
     | 'handleAnswerQuestions'
+    | 'agentQuestions'
   >;
   connectors: ConnectorToggleProps;
 }
@@ -430,6 +431,7 @@ interface ComposerSectionProps {
     | 'handleStop'
     | 'interview'
     | 'handleAnswerQuestions'
+    | 'agentQuestions'
   >;
   connectors: ConnectorToggleProps;
 }
@@ -535,16 +537,22 @@ function JumpToBottomButton({
   );
 }
 
-// Hide sent questions while their replacement arrives; key the chooser by turn
-// to reset local selections.
+// Hide sent questions while their replacement arrives. The replacement shows
+// as soon as the live turn has written it, with Send held until the turn is
+// saved. The chooser is keyed by the questions themselves, so the live and
+// the saved copy are one chooser and keep the scientist's selections.
 function composerQuestions(props: ComposerSectionProps) {
-  const pending = pendingQuestions(props.session.interview);
-  if (!pending || props.session.isAwaitingAgent) return null;
+  const {session} = props;
+  const questions = session.isAwaitingAgent
+    ? session.agentQuestions
+    : pendingQuestions(session.interview)?.questions;
+  if (!questions?.length) return null;
   return (
     <QuestionChooser
-      key={pending.turnId}
-      questions={pending.questions}
-      onAnswer={props.session.handleAnswerQuestions}
+      key={questionsKey(questions)}
+      questions={questions}
+      sendDisabled={session.isAwaitingAgent}
+      onAnswer={session.handleAnswerQuestions}
     />
   );
 }

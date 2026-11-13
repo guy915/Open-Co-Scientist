@@ -39,6 +39,19 @@ describe('availableTierOptions', () => {
     );
   });
 
+  it('names the daily total and what is left once the server says', () => {
+    const hint = (limit: number | null, remaining: number | null) =>
+      availableTierOptions({limit, remaining}).find(o => o.id === 'express')
+        ?.hint;
+    expect(hint(11, 11)).toBe(
+      'Uses 2 of your 11 free daily credits. 11 left today.',
+    );
+    expect(hint(11, 4)).toBe(
+      'Uses 2 of your 11 free daily credits. 4 left today.',
+    );
+    expect(hint(null, null)).toBe('Uses 2 of your free daily credits.');
+  });
+
   it('opens every run type with an API key', () => {
     setStoredApiKey('sk-test');
     expect(availableTierOptions().some(option => option.disabled)).toBe(false);

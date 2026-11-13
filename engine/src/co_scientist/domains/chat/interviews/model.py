@@ -98,8 +98,8 @@ class TurnSplitter:
 
     def _scan_spec(self, delta: str) -> None:
         """Read the block as it streams: whether the turn completes, and its
-        questions as soon as their array closes, so the client can show them
-        while the rest of the block is still being written.
+        questions once their array closes, so the status can move from
+        drafting questions to updating the plan.
         """
         self._spec_text += delta
         if self._completed is None:
@@ -178,8 +178,7 @@ _FORMAT_PROMPT = (
     "once. Never open it before you have finished writing to the "
     "scientist.\n"
     "- Write ``completed`` first and ``questions`` second: the scientist "
-    "is waiting for the questions, and they are shown as soon as that "
-    "array is written.\n"
+    "is waiting for the questions, so write them before the fields.\n"
     "- ``questions`` describes only the questions THIS turn is asking. "
     "Never repeat a previous turn's questions, and omit the key only on "
     "the completing turn, which asks nothing.\n"
@@ -519,7 +518,6 @@ def _interview_request(interview: dict[str, Any]) -> tuple[str, Any]:
 ReasoningSink = Callable[[str], Awaitable[None]]
 ProseSink = Callable[[str], Awaitable[None]]
 PhaseSink = Callable[[str], Awaitable[None]]
-QuestionsSink = Callable[[list[dict[str, Any]]], Awaitable[None]]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -527,7 +525,6 @@ class TurnSinks:
     on_reasoning: ReasoningSink | None = None
     on_prose: ProseSink | None = None
     on_phase: PhaseSink | None = None
-    on_questions: QuestionsSink | None = None
 
 
 # Silence is bounded independently of total duration because reasoning can make
@@ -567,7 +564,10 @@ async def _stream_interview_content(
         prose, fields, reasoned = await _run_interview_completion(
             model, messages, api_key, sinks, thinking_enabled=thinking_enabled
         )
-        retry.observe(prose=prose, reasoned=reasoned)
+        # A turn that wrote only its state block still answered: retrying it
+        # would draft a different turn in its place.
+        answered = prose if fields is None else prose or "<run_spec>"
+        retry.observe(prose=answered, reasoned=reasoned)
     return prose, fields
 
 
@@ -613,10 +613,8 @@ async def _relay_chunk(chunk: Any, splitter: TurnSplitter, sinks: TurnSinks) -> 
     delta = chunk.choices[0].delta
     reasoning = getattr(delta, "reasoning_content", "") or ""
     await _emit(sinks.on_reasoning, reasoning)
-    phase, questions = splitter.phase, splitter.questions
+    phase = splitter.phase
     await _emit(sinks.on_prose, splitter.feed(delta.content or ""))
-    if splitter.questions and questions is None and sinks.on_questions is not None:
-        await sinks.on_questions(splitter.questions)
     if splitter.phase != phase:
         await _emit(sinks.on_phase, splitter.phase)
     return bool(reasoning.strip())
@@ -663,7 +661,6 @@ async def _call_interview_model(
     on_reasoning: ReasoningSink | None = None,
     on_prose: ProseSink | None = None,
     on_phase: PhaseSink | None = None,
-    on_questions: QuestionsSink | None = None,
 ) -> dict[str, Any]:
     try:
         prose, fields = await _stream_interview_content(
@@ -672,7 +669,6 @@ async def _call_interview_model(
                 on_reasoning=on_reasoning,
                 on_prose=on_prose,
                 on_phase=on_phase,
-                on_questions=on_questions,
             ),
         )
     except Exception as exc:

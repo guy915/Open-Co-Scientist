@@ -14,7 +14,6 @@ import type {InferredRunSpec} from '@/shared/lib/run_spec';
 import type {
   Interview,
   InterviewPhase,
-  InterviewQuestion,
   StagedDocument,
 } from '@/shared/api/runs';
 import type {ChatEntry} from './chat_timeline_bubble';
@@ -35,8 +34,6 @@ export interface SessionState {
   agentDraft: string;
   // Set once the reply text has ended and the turn is still finishing.
   agentPhase: InterviewPhase | null;
-  // The live turn's questions, shown before the turn is saved.
-  agentQuestions: InterviewQuestion[] | null;
   error: string | null;
   pendingAttachments: StagedDocument[];
 }
@@ -57,7 +54,6 @@ export function initialSessionState(): SessionState {
     agentReasoning: '',
     agentDraft: '',
     agentPhase: null,
-    agentQuestions: null,
     error: null,
     pendingAttachments: [],
   };
@@ -164,7 +160,6 @@ export function useChatSession(deps: ChatSessionDeps) {
     agentReasoning: state.agentReasoning,
     agentDraft: state.agentDraft,
     agentPhase: state.agentPhase,
-    agentQuestions: state.agentQuestions,
     error: state.error,
     ...setters,
     ...handlers,

@@ -225,14 +225,11 @@ def test_sse_exposes_prose_and_reasoning_but_never_question_json(
     assert prose.strip() == "Which model?"
     assert any(frame == {"type": "reasoning", "content": "Compare models."} for frame in frames)
     # The reply ends before its state block is written: the client hears it
-    # is drafting questions, then gets them as soon as their array closes,
-    # while the rest of the block is still being written.
-    kinds = [frame["type"] for frame in frames if frame["type"] in ("phase", "questions")]
+    # is drafting questions, then updating the plan. The questions themselves
+    # reach it only with the saved turn, never ahead of it.
     phases = [frame["content"] for frame in frames if frame["type"] == "phase"]
     assert phases == ["questions", "finishing"]
-    assert kinds == ["phase", "questions", "phase"]
-    (early,) = [frame["questions"] for frame in frames if frame["type"] == "questions"]
-    assert early == _interview_payload(response)["turns"][-1]["questions"]
+    assert not [frame for frame in frames if frame["type"] == "questions"]
     # A question that names no recommendation recommends its first option.
     assert _interview_payload(response)["turns"][-1]["questions"] == [
         {

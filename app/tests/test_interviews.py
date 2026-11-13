@@ -525,6 +525,40 @@ def _reasoning_only_stream(reasoning: str) -> Any:
     return _chunks()
 
 
+async def test_a_block_only_turn_is_kept_and_not_redrafted(
+    monkeypatch: pytest.MonkeyPatch, reachable_provider: None
+) -> None:
+    # A reasoning turn that wrote only its state block answered. Redrafting it
+    # with thinking off replaced questions the scientist was already reading.
+    calls: list[dict[str, Any]] = []
+    question = {
+        "header": "Pathways",
+        "question": "Which pathways should the hypothesis avoid?",
+        "multi_select": True,
+        "options": [
+            {"label": "AhR", "description": "Indole signalling", "recommended": True},
+            {"label": "TLR4", "description": "Inflammation", "recommended": False},
+        ],
+    }
+    block = _wire_turn({**_response(""), "questions": [question]}).strip()
+
+    async def _fake_acompletion(**kwargs: Any) -> Any:
+        calls.append(kwargs)
+        return _fake_stream(block, reasoning="Ask about pathways.")
+
+    install_completion_backend(monkeypatch, _fake_acompletion)
+    monkeypatch.setattr(settings, "chat_model_name", "deepseek/deepseek-chat")
+    interview = {
+        "turns": [{"role": "user", "content": "gut metabolites in Parkinson's"}],
+        "fields": {},
+    }
+    result = await interviews_model._call_interview_model(interview)
+
+    assert len(calls) == 1
+    assert result["questions"][0]["question"] == question["question"]
+    assert result["completed"] is False
+
+
 async def test_thinking_only_turn_retries_once_with_thinking_off(
     monkeypatch: pytest.MonkeyPatch, reachable_provider: None
 ) -> None:

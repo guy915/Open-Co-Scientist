@@ -18,7 +18,6 @@ from co_scientist.domains.chat.interviews.model import (
     PHASE_QUESTIONS,
     PhaseSink,
     ProseSink,
-    QuestionsSink,
     ReasoningSink,
     _essentials_ready,
     _normalized_fields,
@@ -97,15 +96,12 @@ async def advance_turn(
     on_reasoning: ReasoningSink | None = None,
     on_prose: ProseSink | None = None,
     on_phase: PhaseSink | None = None,
-    on_questions: QuestionsSink | None = None,
 ) -> dict[str, Any]:
     interview = store.get_interview(interview_id)
     assert interview is not None
     started = time.perf_counter()
     sink, fragments = _reasoning_capture(on_reasoning)
-    response, used_fallback = await _run_interview_turn(
-        interview, sink, on_prose, on_phase, on_questions
-    )
+    response, used_fallback = await _run_interview_turn(interview, sink, on_prose, on_phase)
     turn = await _with_repaired_questions(
         _resolved_turn(response, used_fallback, "".join(fragments)), on_phase
     )
@@ -193,15 +189,12 @@ async def _run_interview_turn(
     on_reasoning: ReasoningSink | None,
     on_prose: ProseSink | None = None,
     on_phase: PhaseSink | None = None,
-    on_questions: QuestionsSink | None = None,
 ) -> tuple[dict[str, Any], bool]:
     """Fallback provenance is resolved per turn because credentials or
     provider availability can change.
     """
     try:
-        response = await model._call_interview_model(
-            interview, on_reasoning, on_prose, on_phase, on_questions
-        )
+        response = await model._call_interview_model(interview, on_reasoning, on_prose, on_phase)
         return response, False
     except model.InterviewModelUnavailableError as error:
         if not offline_mode():

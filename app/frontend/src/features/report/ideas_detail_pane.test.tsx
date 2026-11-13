@@ -67,6 +67,24 @@ function renderDetail(
 }
 
 describe('ideas detail pane', () => {
+  it('labels the mechanism and the literature grounding by what they hold', () => {
+    renderDetail({
+      hypothesis: makeHypothesis({
+        id: 'h1',
+        mechanism: 'Reviews establish brain exposure as the filter [C1].',
+        expected_effect: 'The drug blocks the receptor, which slows growth.',
+      }),
+    });
+    expect(
+      screen.getByText('Proposed mechanism of action:').parentElement,
+    ).toHaveTextContent('The drug blocks the receptor, which slows growth.');
+    expect(
+      screen.getByText('Literature grounding:').parentElement,
+    ).toHaveTextContent(
+      /^Literature grounding: Reviews establish brain exposure as the filter\.$/,
+    );
+  });
+
   it('shows the idea, its lineage, only its own reviews and claims, and its newest matches first', () => {
     renderDetail({
       hypothesis: makeHypothesis({

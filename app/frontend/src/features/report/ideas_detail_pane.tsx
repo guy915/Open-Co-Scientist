@@ -33,6 +33,7 @@ import {
   type NormalizedSpan,
   type ReviewDetail,
 } from './ideas_detail_data';
+import {stripCitationKeys} from './learning_text';
 
 const IDEA_DETAIL_PANE_CLASSES =
   'idea-detail-pane grid min-h-0 min-w-0 flex-1 content-start gap-5 ' +
@@ -355,14 +356,18 @@ function HypothesisDescriptionContent({hypothesis}: {hypothesis: Hypothesis}) {
   return (
     <>
       <h3>{hypothesis.title}</h3>
-      {hypothesis.mechanism && (
-        <p>
-          <strong>Proposed mechanism of action:</strong> {hypothesis.mechanism}
-        </p>
-      )}
+      {/* Store fields keep historical names: expected_effect holds the
+          step-by-step mechanism and mechanism the literature grounding. */}
       {hypothesis.expected_effect && (
         <p>
-          <strong>Expected effect:</strong> {hypothesis.expected_effect}
+          <strong>Proposed mechanism of action:</strong>{' '}
+          {hypothesis.expected_effect}
+        </p>
+      )}
+      {hypothesis.mechanism && (
+        <p>
+          <strong>Literature grounding:</strong>{' '}
+          {stripCitationKeys(hypothesis.mechanism)}
         </p>
       )}
     </>

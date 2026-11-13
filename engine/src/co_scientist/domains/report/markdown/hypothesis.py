@@ -579,10 +579,13 @@ def _render_hypothesis_scene_setting(hyp: dict[str, Any]) -> list[str]:
 
 
 def _render_hypothesis_mechanism(hyp: dict[str, Any]) -> list[str]:
+    """Store columns keep their historical names: `expected_effect` holds the
+    step-by-step mechanism and `mechanism` the literature grounding.
+    """
     lines: list[str] = []
     for label, value in (
-        ("**Mechanism:**", hyp.get("mechanism")),
-        ("**Predicted effect:**", hyp.get("expected_effect")),
+        ("**Mechanism:**", hyp.get("expected_effect")),
+        ("**Literature grounding:**", hyp.get("mechanism")),
     ):
         if value:
             lines += [f"{label} {value}", ""]

@@ -108,3 +108,16 @@ def test_persisted_sentinel_dois_do_not_merge_distinct_papers() -> None:
 
     assert [row["id"] for row in deduped] == ["ev-1", "ev-2", "ev-3"]
     assert report_markdown_hypothesis._identifier_suffix(rows[0]) == ""
+
+
+def test_hypothesis_mechanism_and_grounding_carry_matching_labels() -> None:
+    lines = report_markdown_hypothesis._render_hypothesis_mechanism(
+        {"mechanism": "Reviews support it [C1].", "expected_effect": "A blocks B."}
+    )
+
+    assert lines == [
+        "**Mechanism:** A blocks B.",
+        "",
+        "**Literature grounding:** Reviews support it [C1].",
+        "",
+    ]

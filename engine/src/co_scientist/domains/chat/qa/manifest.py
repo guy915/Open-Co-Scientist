@@ -265,10 +265,12 @@ _DEFAULT_RESULTS = 3
 _FIELD_MAX_CHARS = 500
 
 
+# Store columns keep their historical names: `mechanism` holds the literature
+# grounding and `expected_effect` the step-by-step mechanism explanation.
 _BODY_FIELDS: tuple[tuple[str, str], ...] = (
     ("statement", "Statement"),
-    ("mechanism", "Mechanism"),
-    ("expected_effect", "Expected effect"),
+    ("expected_effect", "Mechanism"),
+    ("mechanism", "Literature grounding"),
     ("experimental_context", "Experimental context"),
 )
 

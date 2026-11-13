@@ -297,3 +297,12 @@ def test_a_completing_block_is_not_drafting_questions() -> None:
     splitter.feed('Ready to run.\n<run_spec>{"completed": true, "title": "Salt"')
     assert splitter.phase == "finishing"
     assert splitter.questions is None
+
+
+def test_the_prompt_keeps_questions_out_of_the_prose() -> None:
+    from co_scientist.domains.chat.interviews import model
+
+    prompt = model._SYSTEM_PROMPT
+    assert "Do NOT write the questions" in prompt
+    assert "Your prose asks each of them" not in prompt
+    assert "and then ask." not in prompt

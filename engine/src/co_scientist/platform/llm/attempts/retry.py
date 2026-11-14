@@ -26,6 +26,7 @@ from co_scientist.platform.llm.attempts.escalation import (
     is_transient_provider_error,
     log_escalation,
 )
+from co_scientist.platform.llm.failure_log import diagnostic_extra, provider_error_fields
 from co_scientist.platform.llm.request.thinking import failure_context_text
 from co_scientist.platform.llm.telemetry import attempt_span, record_retry, record_retry_reason
 
@@ -149,6 +150,14 @@ def _platform_reset_from_message(error: Exception, now: float) -> tuple[float, s
     return None
 
 
+def rate_limit_reset(error: Exception) -> tuple[float, str] | None:
+    """When a rate limit lifts (epoch seconds) and how that was read, if the
+    error says.
+    """
+    now = time.time()
+    return _platform_reset_from_headers(error, now) or _platform_reset_from_message(error, now)
+
+
 def platform_rate_limit_park(
     error: Exception,
 ) -> LLMRateLimitParkError | None:
@@ -156,7 +165,7 @@ def platform_rate_limit_park(
     in ordinary backoff.
     """
     now = time.time()
-    resolved = _platform_reset_from_headers(error, now) or _platform_reset_from_message(error, now)
+    resolved = rate_limit_reset(error)
     if resolved is None:
         return None
     resume_at, reason = resolved
@@ -257,6 +266,12 @@ def _log_failure(error: Exception, attempt: Attempt) -> None:
         attempt.number,
         failure_context_text(error),
         short_error_text(error),
+        extra=diagnostic_extra(
+            "llm.call_failed",
+            attempt=attempt.number,
+            final=attempt.is_final,
+            **provider_error_fields(error),
+        ),
     )
 
 

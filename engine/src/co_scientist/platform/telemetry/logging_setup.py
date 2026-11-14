@@ -43,12 +43,53 @@ _DIAGNOSTIC_EVENTS = frozenset(
         "llm.free_route_slow",
         "llm.free_primary_shed",
         "interview.question_unusable",
+        "interview.lead_in_without_questions",
+        # Provider failures carry their status, code and short provider
+        # message as fields (platform/llm/failure_log.py).
+        "llm.provider_failure",
+        "llm.provider_switch",
+        "llm.call_failed",
         "schema_retry",
         "claim_gate.unverified",
         "report.redacted",
         "report.withheld",
     }
 )
+
+
+_FIELD_NAME = re.compile(r"[a-z][a-z0-9_]{0,31}")
+_FIELD_TEXT_LIMIT = 200
+_MAX_FIELDS = 16
+# Credentials a provider message could echo back.
+_SECRET = re.compile(
+    r"(?i)\b(?:sk|pk|rk)-[a-z0-9_\-]{8,}|\bbearer\s+\S+|\b[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}"
+)
+
+
+def _field_value(value: object) -> str | None:
+    if type(value) in (int, float, bool):
+        return json.dumps(value)
+    if not isinstance(value, str):
+        return None
+    text = _SECRET.sub("[redacted]", " ".join(value.split()))
+    if len(text) > _FIELD_TEXT_LIMIT:
+        text = text[: _FIELD_TEXT_LIMIT - 1] + "\u2026"
+    return json.dumps(text, ensure_ascii=False)
+
+
+def _diagnostic_fields(record: logging.LogRecord) -> str:
+    """Named events may export short, scrubbed fields that say why a provider
+    failed; they are built from provider responses, never research text.
+    """
+    fields = getattr(record, "diagnostic_fields", None)
+    if not isinstance(fields, dict):
+        return ""
+    parts = []
+    for name, value in list(fields.items())[:_MAX_FIELDS]:
+        rendered = _field_value(value)
+        if isinstance(name, str) and _FIELD_NAME.fullmatch(name) and rendered is not None:
+            parts.append(f"{name}={rendered}")
+    return "; " + " ".join(parts) if parts else ""
 
 
 def diagnostic_projection(record: logging.LogRecord) -> logging.LogRecord:
@@ -59,9 +100,11 @@ def diagnostic_projection(record: logging.LogRecord) -> logging.LogRecord:
         values = record.args.values() if isinstance(record.args, dict) else record.args or ()
         numbers = [value for value in values if type(value) in (int, float, bool)][:16]
         event = getattr(record, "diagnostic_event", None)
-        event = event if isinstance(event, str) and event in _DIAGNOSTIC_EVENTS else "other"
-        projected.msg = "Research diagnostic event=%s at line %s; numeric values=%s"
-        projected.args = (event, record.lineno, numbers)
+        named = isinstance(event, str) and event in _DIAGNOSTIC_EVENTS
+        event = event if named else "other"
+        fields = _diagnostic_fields(record) if named else ""
+        projected.msg = "Research diagnostic event=%s at line %s; numeric values=%s%s"
+        projected.args = (event, record.lineno, numbers, fields)
         projected.stack_info = None
     if record.name.startswith(_PRIVATE_LOGGERS) or record.name.startswith("uvicorn"):
         if record.exc_info and record.exc_info[1] is not None:

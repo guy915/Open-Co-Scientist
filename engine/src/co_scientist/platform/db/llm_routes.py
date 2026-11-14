@@ -127,13 +127,19 @@ def reserve_free_call(conn: sqlite3.Connection, ceiling: int) -> None:
     conn.execute("DELETE FROM llm_free_calls WHERE day<?", (day - 7,))
 
 
-def exhaust_free_routes(path: str) -> None:
+def exhaust_free_routes(path: str, until: float | None = None) -> float:
+    """Block the free route until ``until``, or to the end of the UTC day.
+
+    Returns the time the block ends.
+    """
+    end = utc_day_bounds(current_time())[1] if until is None else until
     with transaction(path) as conn:
         conn.execute(
             "INSERT INTO llm_route_blocks (slot,unavailable_until) VALUES ('openrouter',?) "
             "ON CONFLICT(slot) DO UPDATE SET unavailable_until=excluded.unavailable_until",
-            (utc_day_bounds(current_time())[1],),
+            (end,),
         )
+    return end
 
 
 def record_switch(

@@ -1159,3 +1159,78 @@ async def test_interview_free_route_keeps_answer_once_text_is_shown(
     text = [chunk.choices[0].delta.content async for chunk in response]
     assert "".join(text) == "partial answer"
     assert calls == ["openrouter/inclusionai/ling-3.1-flash"]
+
+
+class _ProviderError(Exception):
+    def __init__(self, message: str, status_code: int, headers: dict[str, str] | None = None):
+        super().__init__(message)
+        self.status_code = status_code
+        self.response = httpx.Response(status_code, headers=headers or {})
+
+
+def test_a_per_minute_rate_limit_blocks_the_free_route_briefly(
+    path: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from co_scientist.platform.db import llm_routes
+    from co_scientist.platform.llm import routing
+
+    monkeypatch.setattr(llm_routes, "current_time", lambda: 200000.0)
+    monkeypatch.setattr("co_scientist.platform.db.current_time", lambda: 200000.0)
+    error = _ProviderError('{"error":{"message":"Rate limit exceeded","code":429}}', 429)
+
+    routing._note_failure(path, "openrouter", "openrouter/x:free", error, "provider_quota")
+
+    assert not free_available(path, 10)
+    monkeypatch.setattr(llm_routes, "current_time", lambda: 200061.0)
+    assert free_available(path, 10)
+
+
+@pytest.mark.parametrize(
+    ("error", "blocks_all_day"),
+    [
+        (
+            _ProviderError(
+                '{"error":{"message":"Rate limit exceeded: free-models-per-day","code":429}}',
+                429,
+            ),
+            True,
+        ),
+        (_ProviderError('{"error":{"message":"Insufficient credits","code":402}}', 402), True),
+        (_ProviderError("Rate limit exceeded", 429, {"retry-after": "30"}), False),
+    ],
+    ids=["daily-cap", "no-credits", "retry-after"],
+)
+def test_only_lasting_failures_block_the_free_route_all_day(
+    path: str, monkeypatch: pytest.MonkeyPatch, error: Exception, blocks_all_day: bool
+) -> None:
+    from co_scientist.platform.db import llm_routes
+    from co_scientist.platform.llm import routing
+
+    monkeypatch.setattr(llm_routes, "current_time", lambda: 200000.0)
+    monkeypatch.setattr("co_scientist.platform.llm.attempts.retry.time.time", lambda: 200000.0)
+
+    routing._note_failure(path, "openrouter", "openrouter/x:free", error, "provider_quota")
+
+    monkeypatch.setattr(llm_routes, "current_time", lambda: 200000.0 + 3600)
+    assert free_available(path, 10) is not blocks_all_day
+
+
+def test_a_provider_failure_logs_why_without_secrets(
+    path: str, caplog: pytest.LogCaptureFixture
+) -> None:
+    from co_scientist.platform.llm import routing
+    from co_scientist.platform.telemetry.logging_setup import diagnostic_projection
+
+    error = _ProviderError(
+        'OpenrouterException - {"error":{"message":"Key sk-or-v1-abcdefghijkl is rate '
+        'limited: free-models-per-day","code":429,"metadata":{"raw":"private goal"}}}',
+        429,
+    )
+    with caplog.at_level("WARNING", logger="co_scientist.platform.llm.failure_log"):
+        routing._note_failure(path, "openrouter", "openrouter/x:free", error, "provider_quota")
+
+    line = diagnostic_projection(caplog.records[-1]).getMessage()
+    assert "event=llm.provider_failure" in line
+    assert 'slot="openrouter"' in line and "status=429" in line and "provider_code=429" in line
+    assert "free-models-per-day" in line
+    assert "sk-or-v1" not in line and "private goal" not in line

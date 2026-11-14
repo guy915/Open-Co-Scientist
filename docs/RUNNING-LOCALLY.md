@@ -57,7 +57,7 @@ and [DEPLOYMENT.md](DEPLOYMENT.md) for authenticated hosting.
 
 ## Model and retrieval configuration
 
-The default free route is `openrouter/inclusionai/ling-3.2-flash:free` with
+The default free route is `openrouter/thinkingmachines/inkling-2-small:free` with
 `OPENROUTER_API_KEY`. Operator Express calls use free OpenRouter, then the direct
 subscriber API credit, then Azure. Standard and higher tiers require BYOK.
 See [credit setup](azure-setup.md). Inspect `/status` for retrieval availability.

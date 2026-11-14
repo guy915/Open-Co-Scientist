@@ -162,6 +162,8 @@ def wire_effort(model_name: str) -> str:
         return _REASONING_EFFORT
     if profile.pinned_effort:
         return profile.pinned_effort
+    if profile.chat_effort and policy.role in _CONVERSATIONAL_ROLES:
+        return profile.chat_effort
     if is_free_route(model_name.lower()) and policy.role not in _CONVERSATIONAL_ROLES:
         return _GATEWAY_MAX_EFFORT
     return policy.effort

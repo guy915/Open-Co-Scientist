@@ -597,7 +597,6 @@ async def test_expired_trial_selects_only_its_declared_live_zero_cost_fallbacks(
     catalog = {
         model.removeprefix("openrouter/"): row("0.1"),
         fallbacks[0]: row("0"),
-        fallbacks[1]: row("0.1"),
     }
     monkeypatch.setattr(free_catalog, "_reader", free_catalog.CatalogReader(lambda: catalog))
     args: dict[str, Any] = {
@@ -647,8 +646,40 @@ def test_default_model_is_a_declared_free_route_and_old_trial_moves_to_it() -> N
 
     assert DEFAULT_MODEL.endswith(":free")
     assert is_free_route(DEFAULT_MODEL)
-    trial = model_profile("openrouter/inclusionai/ling-3.1-flash").fallbacks
-    assert trial[0] == DEFAULT_MODEL.removeprefix("openrouter/")
+    for old in (
+        "openrouter/inclusionai/ling-3.1-flash",
+        "openrouter/inclusionai/ling-3.2-flash:free",
+    ):
+        assert model_profile(old).fallbacks == (DEFAULT_MODEL.removeprefix("openrouter/"),)
+
+
+def test_default_free_route_is_the_only_openrouter_model_and_has_1m_context() -> None:
+    from co_scientist.core.config import DEFAULT_MODEL
+    from co_scientist.platform.llm.profile import model_profile
+
+    profile = model_profile(DEFAULT_MODEL)
+    assert DEFAULT_MODEL == "openrouter/thinkingmachines/inkling-2-small:free"
+    assert profile.fallbacks == ()
+    assert profile.context_length == 1_048_576
+    # The free host accepts no response_format, so the schema rides in the prompt.
+    assert profile.json_object is False
+    assert profile.json_schema is False
+
+
+def test_default_free_route_reasons_high_in_chat_and_max_in_the_workflow() -> None:
+    from co_scientist.core.config import DEFAULT_MODEL
+    from co_scientist.platform.llm.request.thinking import deepseek_thinking_extra_body
+    from co_scientist.platform.llm.roles import scoped_call_policy
+
+    def effort(role: str) -> str:
+        with scoped_call_policy(role):  # type: ignore[arg-type]
+            body = deepseek_thinking_extra_body(DEFAULT_MODEL)
+        assert "models" not in body
+        return str(body["reasoning"]["effort"])
+
+    assert effort("interview") == "high"
+    assert effort("chat") == "high"
+    assert effort("generation") == "max"
 
 
 async def test_expired_trial_without_a_verified_declared_fallback_still_fails_closed(

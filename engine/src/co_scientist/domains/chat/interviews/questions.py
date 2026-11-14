@@ -136,10 +136,11 @@ it and return the question it ends on as clickable answers.
 - ``question`` is that question, in full, in the turn's own words.
 - ``header`` is a two-or-three word label for what is being chosen.
 - ``options`` is {min} to {max} answers a scientist could plausibly click, \
-each a short ``label`` and a one-line ``description`` of what choosing it \
-would mean for the work, and ``recommended`` true on the answer the turn \
-leans towards (exactly one when ``multi_select`` is false, one or more when \
-it is true; put it first). Where the answer space is open, enumerate the \
+each a short ``label`` of at most six words and a one-line \
+``description`` of what choosing it would mean for the work, and \
+``recommended`` true on the answer the turn leans towards (exactly one \
+when ``multi_select`` is false, one or more when it is true; put it \
+first). Where the answer space is open, enumerate the \
 directions the answer could take rather than guessing at exact values.
 - ``multi_select`` is true when several answers can hold at once and false \
 when they are alternatives.

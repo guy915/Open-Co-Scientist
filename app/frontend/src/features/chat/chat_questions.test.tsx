@@ -151,6 +151,9 @@ test('marks the recommended answers', () => {
     screen.getByLabelText(/Gene therapy/).closest('label'),
   );
   expect(screen.getAllByText('Recommended')).toHaveLength(1);
+  // A long label wraps in its own column; the badge never takes a new line.
+  expect(recommended.className).toContain('shrink-0');
+  expect(recommended.parentElement?.className).not.toContain('flex-wrap');
 });
 
 describe('answer state and pending questions', () => {

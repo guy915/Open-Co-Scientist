@@ -563,14 +563,16 @@ function AnswerRow(props: AnswerRowProps) {
         onClick={onSelect}
       />
       <AnswerMarker multiSelect={multiSelect} selected={selected} />
-      {/* The description always takes its own line under the label. */}
+      {/* The description always takes its own line under the label. A long
+          label wraps inside its own column, so the badge stays on the first
+          line beside it and never drops onto a line of its own. */}
       <span className="grid min-w-0 gap-0.5">
-        <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
+        <span className="flex min-w-0 items-baseline gap-x-2">
           <strong className="min-w-0 text-base leading-[1.2] font-bold">
             <MarkdownMessage content={label} inline />
           </strong>
           {recommended && (
-            <Chip tone="accent" size="xs">
+            <Chip tone="accent" size="xs" layoutClassName="shrink-0">
               Recommended
             </Chip>
           )}

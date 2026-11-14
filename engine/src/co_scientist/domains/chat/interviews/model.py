@@ -672,7 +672,12 @@ async def _call_interview_model(
             ),
         )
     except Exception as exc:
-        logger.warning("Interview model failed: %s", exc)
+        logger.warning(
+            "Interview model failed: %s",
+            exc,
+            exc_info=exc,
+            extra={"diagnostic_event": "interview.model_failed"},
+        )
         raise InterviewModelUnavailableError(
             "The interview Agent is temporarily unavailable."
         ) from exc

@@ -39,6 +39,9 @@ _DIAGNOSTIC_EVENTS = frozenset(
         "schema_degraded",
         # Named warnings, so operators can group them without the text.
         "interview.state_missing",
+        "interview.model_failed",
+        "llm.free_route_slow",
+        "llm.free_primary_shed",
         "interview.question_unusable",
         "schema_retry",
         "claim_gate.unverified",

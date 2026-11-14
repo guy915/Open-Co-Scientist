@@ -611,6 +611,46 @@ async def test_expired_trial_selects_only_its_declared_live_zero_cost_fallbacks(
     assert args["extra_body"]["provider"]["max_price"] == _ZERO_CAP
 
 
+async def test_shed_free_primary_is_reported_once_as_an_error(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    from co_scientist.platform.llm.admission import free_policy
+    from co_scientist.platform.llm.profile import model_profile
+
+    model = "openrouter/inclusionai/ling-3.1-flash"
+    fallbacks = model_profile(model).fallbacks
+    zero = {
+        "pricing": _ZERO,
+        "architecture": {"input_modalities": ["text"], "output_modalities": ["text"]},
+    }
+    catalog = dict.fromkeys(fallbacks, zero)
+    monkeypatch.setattr(free_catalog, "_reader", free_catalog.CatalogReader(lambda: catalog))
+    monkeypatch.setattr(free_policy, "_shed_reported", set())
+    for _ in range(2):
+        args: dict[str, Any] = {
+            "model": model,
+            "messages": [],
+            "extra_body": {"models": list(fallbacks)},
+        }
+        with caplog.at_level("ERROR"):
+            assert await enforce_free_request(args)
+    shed = [
+        r for r in caplog.records if getattr(r, "diagnostic_event", "") == "llm.free_primary_shed"
+    ]
+    assert len(shed) == 1
+    assert shed[0].levelname == "ERROR"
+
+
+def test_default_model_is_a_declared_free_route_and_old_trial_moves_to_it() -> None:
+    from co_scientist.core.config import DEFAULT_MODEL
+    from co_scientist.platform.llm.profile import is_free_route, model_profile
+
+    assert DEFAULT_MODEL.endswith(":free")
+    assert is_free_route(DEFAULT_MODEL)
+    trial = model_profile("openrouter/inclusionai/ling-3.1-flash").fallbacks
+    assert trial[0] == DEFAULT_MODEL.removeprefix("openrouter/")
+
+
 async def test_expired_trial_without_a_verified_declared_fallback_still_fails_closed(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

@@ -392,12 +392,14 @@ async def _route_interview_stream(
     enable_thinking: bool = True,
     reasoning_max_tokens: int | None = None,
     prepare: Any = None,
+    keep_free_route: bool = False,
 ) -> Any:
     from co_scientist.platform.llm.llm_scope import app_call_scope
     from co_scientist.platform.llm.roles import scoped_call_policy
     from co_scientist.platform.llm.routing import routed_completion, scoped_operator_routing
 
-    monkeypatch.delenv("OPENROUTER_API_KEY")
+    if not keep_free_route:
+        monkeypatch.delenv("OPENROUTER_API_KEY")
     request = {"stream": True, "timeout": 2}
     prepare = prepare or (lambda args, model: {**args, "model": model})
     with (
@@ -1095,3 +1097,65 @@ async def test_goal_text_on_claude_sends_no_thinking_and_only_its_answer_budget(
             "SELECT role,COUNT(refused),SUM(refused) FROM anthropic_credit GROUP BY role"
         ).fetchall()
         assert [tuple(row) for row in rows] == [("goal_text", 2, 0)]
+
+
+async def test_interview_slow_free_route_falls_back_after_reasoning_only(
+    path: str, providers: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import co_scientist.platform.llm.routing as routing
+
+    monkeypatch.setattr(routing, "_FREE_ANSWER_SECONDS", 0.05)
+    calls: list[str] = []
+    release = asyncio.Event()
+
+    async def slow_free() -> Any:
+        yield _stream_chunk(reasoning="thinking for a long time")
+        await release.wait()
+        yield _stream_chunk(content="too late", finish_reason="stop")
+
+    async def dispatch(args: dict[str, Any], model: str) -> Any:
+        calls.append(model)
+        if model.startswith("openrouter/"):
+            return slow_free()
+        return _stream(_stream_chunk(content="answer", finish_reason="stop"))
+
+    response = await _route_interview_stream(
+        path, providers, monkeypatch, dispatch, keep_free_route=True
+    )
+    try:
+        first = await response.__anext__()
+        assert first.choices[0].delta.reasoning_content == "thinking for a long time"
+        second = await asyncio.wait_for(response.__anext__(), timeout=1)
+        assert second.choices[0].delta.content == "answer"
+        assert calls == [
+            "openrouter/inclusionai/ling-3.1-flash",
+            "anthropic/claude-haiku-5-5",
+        ]
+    finally:
+        release.set()
+        await response.aclose()
+
+
+async def test_interview_free_route_keeps_answer_once_text_is_shown(
+    path: str, providers: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import co_scientist.platform.llm.routing as routing
+
+    monkeypatch.setattr(routing, "_FREE_ANSWER_SECONDS", 0.05)
+    calls: list[str] = []
+
+    async def answering() -> Any:
+        yield _stream_chunk(content="partial")
+        await asyncio.sleep(0.1)
+        yield _stream_chunk(content=" answer", finish_reason="stop")
+
+    async def dispatch(args: dict[str, Any], model: str) -> Any:
+        calls.append(model)
+        return answering()
+
+    response = await _route_interview_stream(
+        path, providers, monkeypatch, dispatch, keep_free_route=True
+    )
+    text = [chunk.choices[0].delta.content async for chunk in response]
+    assert "".join(text) == "partial answer"
+    assert calls == ["openrouter/inclusionai/ling-3.1-flash"]

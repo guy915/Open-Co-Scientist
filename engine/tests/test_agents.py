@@ -204,6 +204,7 @@ _LAYERS = (
     "profile",
     "roles",
     "values",
+    "failure_log",
     "admission",
     "structured",
     "telemetry",

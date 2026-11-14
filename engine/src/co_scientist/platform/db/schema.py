@@ -86,7 +86,7 @@ CREATE TABLE IF NOT EXISTS llm_routes (
     forecast_microeur INTEGER NOT NULL CHECK(forecast_microeur >= 0)
 );
 CREATE TABLE IF NOT EXISTS llm_route_blocks (
-    slot TEXT PRIMARY KEY, unavailable_until REAL NOT NULL
+    slot TEXT PRIMARY KEY, unavailable_until REAL NOT NULL, reason TEXT
 );
 CREATE TABLE IF NOT EXISTS llm_free_calls (
     day INTEGER PRIMARY KEY, calls INTEGER NOT NULL
@@ -870,4 +870,7 @@ ADDED_COLUMNS = (
     ("anthropic_credit", "refused", "INTEGER"),
     # Weighted free credits; rows written before weighting were Express (2).
     ("free_run_usage", "credits", "INTEGER NOT NULL DEFAULT 2"),
+    # NULL marks a block from before blocks kept their cause; those blocks
+    # used an all-day rule for any error, so they no longer hold.
+    ("llm_route_blocks", "reason", "TEXT"),
 )

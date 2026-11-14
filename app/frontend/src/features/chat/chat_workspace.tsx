@@ -404,7 +404,7 @@ function TimelineSection({
       ref={scrollRef}
       className="reference-chat-timeline flex-1 [scrollbar-gutter:stable_both-edges] [overflow-anchor:none] overflow-x-hidden overflow-y-auto px-4 pt-5 pb-[var(--chat-composer-h,12rem)]"
     >
-      <div className={`${CHAT_COLUMN_CLASSES} content-end`}>
+      <div className={CHAT_COLUMN_CLASSES}>
         {timelineItems.map(item => (
           <Fragment key={item.id}>{item.node}</Fragment>
         ))}
@@ -628,19 +628,8 @@ function scrollToBottom(
     'form.reference-composer',
   );
   if (actions && composer && column) {
-    // Short chats can reach scrollTop 0 before their actions clear the composer;
-    // align the grid tracks to measured content space when no scroll is needed.
-    const composerRect = composer.getBoundingClientRect();
-    const scrollerRect = scroller.getBoundingClientRect();
-    const topPadding = Number.parseFloat(getComputedStyle(scroller).paddingTop);
-    const restingHeight = Math.max(
-      0,
-      composerRect.top - ACTION_ROW_REST_GAP_PX - scrollerRect.top - topPadding,
-    );
-    const minHeight = `${Math.ceil(restingHeight)}px`;
-    if (column.style.minHeight !== minHeight) {
-      column.style.minHeight = minHeight;
-    }
+    // A short chat starts at the top and needs no scroll; only a chat taller
+    // than the space above the composer scrolls its last actions into view.
     const actionBottom = actions.getBoundingClientRect().bottom;
     const composerTop = composer.getBoundingClientRect().top;
     scroller.scrollTop = Math.max(
@@ -648,7 +637,6 @@ function scrollToBottom(
       scroller.scrollTop + actionBottom - composerTop + ACTION_ROW_REST_GAP_PX,
     );
   } else {
-    if (column) column.style.minHeight = '';
     scroller.scrollTop = scroller.scrollHeight;
   }
   refs.lastAppliedTop.current = scroller.scrollTop;

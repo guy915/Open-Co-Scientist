@@ -43,6 +43,12 @@ from co_scientist.platform.llm.admission.spend import (
     require_enabled,
     scoped_run_spending,
 )
+from co_scientist.platform.llm.failure_log import (
+    diagnostic_extra,
+    is_rate_limited,
+    log_provider_failure,
+    rate_limit_reset,
+)
 from co_scientist.platform.llm.profile import HAIKU, is_free_route, model_profile
 from co_scientist.platform.llm.roles import current_call_policy
 
@@ -322,21 +328,29 @@ class _InterviewRoutedStream:
                 selected,
                 self._reason,
                 self._role,
+                extra=diagnostic_extra(
+                    "llm.provider_switch",
+                    from_slot=self._previous,
+                    to_slot=selected,
+                    reason=self._reason,
+                    role=self._role,
+                ),
             )
 
-    def _failure(self, slot: Slot, error: Exception) -> tuple[str, bool] | None:
+    def _failure(self, slot: Slot, model: str, error: Exception) -> tuple[str, bool] | None:
         if isinstance(error, (AnthropicCreditUnavailableError, OpenRouterCapacityError)):
             long = isinstance(error, AnthropicPromptTooLongError)
-            return ("long_context" if long else "credit_or_free_cap", self._sticky and not long)
+            reason = "long_context" if long else "credit_or_free_cap"
+            _note_failure(self._path, slot, model, error, reason)
+            return (reason, self._sticky and not long)
         if isinstance(error, FreeModelEligibilityError):
             if slot != "openrouter":
                 return None
-            exhaust_free_routes(self._path)
+            _note_failure(self._path, slot, model, error, "free_route_unavailable")
             return "free_route_unavailable", self._sticky
         if not _provider_quota(error):
             return None
-        if slot == "openrouter":
-            exhaust_free_routes(self._path)
+        _note_failure(self._path, slot, model, error, "provider_quota")
         return "provider_quota", self._sticky
 
     async def _advance(self, reason: str, sticky: bool) -> bool:
@@ -370,7 +384,7 @@ class _InterviewRoutedStream:
                     if isinstance(error, (ProviderAdmissionError, LLMTimeoutError)):
                         raise
                     raise ProviderAdmissionError(UNAVAILABLE) from error
-                failure = self._failure(slot, error)
+                failure = self._failure(slot, model, error)
                 if failure is None:
                     raise
                 self._previous, self._reason = slot, failure[0]
@@ -436,7 +450,7 @@ class _InterviewRoutedStream:
                 if isinstance(error, (ProviderAdmissionError, LLMTimeoutError)):
                     raise
                 raise ProviderAdmissionError(UNAVAILABLE) from error
-            failure = self._failure(self._slot, error)
+            failure = self._failure(self._slot, str(self._args["model"]), error)
             if failure is None:
                 self._done = True
                 raise
@@ -539,6 +553,42 @@ async def _buffer(response: Any, refused: Callable[[Any], bool]) -> tuple[Any, b
         if close is not None:
             await close()
     return _BufferedStream(chunks), declined, limited
+
+
+# A rate limit with no reset hint is taken as per-minute; a catalog that
+# could not be read is retried soon. Only a daily cap, a spent or rejected
+# key, or an ineligible route blocks the free route to the end of the UTC day.
+_FREE_RATE_LIMIT_BLOCK_SECONDS: Final[float] = 60.0
+_FREE_CATALOG_BLOCK_SECONDS: Final[float] = 300.0
+
+
+def _free_route_block_until(error: Exception) -> float | None:
+    """When the free route may be tried again after ``error``; None means the
+    end of the UTC day.
+    """
+    from co_scientist.platform.db import current_time
+
+    if isinstance(error, FreeModelEligibilityError):
+        if "catalog unavailable" in str(error):
+            return current_time() + _FREE_CATALOG_BLOCK_SECONDS
+        return None
+    if getattr(error, "status_code", None) == 429 or is_rate_limited(error):
+        reset = rate_limit_reset(error)
+        if reset is None:
+            return current_time() + _FREE_RATE_LIMIT_BLOCK_SECONDS
+        resume_at, how = reset
+        return None if how == "message_per_day" else resume_at
+    return None
+
+
+def _note_failure(path: str, slot: Slot, model: str, error: Exception, reason: str) -> None:
+    """Block the free route when it failed, and log why the call moves on."""
+    blocked = (
+        exhaust_free_routes(path, _free_route_block_until(error), reason=reason)
+        if slot == "openrouter" and reason in ("free_route_unavailable", "provider_quota")
+        else None
+    )
+    log_provider_failure(slot=slot, model=model, error=error, reason=reason, blocked_until=blocked)
 
 
 def _provider_quota(error: Exception) -> bool:
@@ -683,6 +733,13 @@ async def routed_completion(
                 slot,
                 reason,
                 current_call_policy().role,
+                extra=diagnostic_extra(
+                    "llm.provider_switch",
+                    from_slot=previous,
+                    to_slot=slot,
+                    reason=reason,
+                    role=current_call_policy().role,
+                ),
             )
         args = prepare(request, _model(slot, original))
         try:
@@ -715,11 +772,12 @@ async def routed_completion(
             long = isinstance(error, AnthropicPromptTooLongError)
             previous, reason = slot, "long_context" if long else "credit_or_free_cap"
             sticky = sticky and not long
-        except FreeModelEligibilityError:
+            _note_failure(path, slot, str(args["model"]), error, reason)
+        except FreeModelEligibilityError as error:
             if slot != "openrouter":
                 raise
-            exhaust_free_routes(path)
             previous, reason = slot, "free_route_unavailable"
+            _note_failure(path, slot, str(args["model"]), error, reason)
         except Exception as error:
             if slot == "azure":
                 if isinstance(error, (ProviderAdmissionError, LLMTimeoutError)):
@@ -727,7 +785,6 @@ async def routed_completion(
                 raise ProviderAdmissionError(UNAVAILABLE) from error
             if not _provider_quota(error):
                 raise
-            if slot == "openrouter":
-                exhaust_free_routes(path)
             previous, reason = slot, "provider_quota"
+            _note_failure(path, slot, str(args["model"]), error, reason)
     raise ProviderAdmissionError(UNAVAILABLE)

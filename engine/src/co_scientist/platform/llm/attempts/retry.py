@@ -7,7 +7,6 @@ import logging
 import time
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
 from typing import Any, Final, Generic, TypeVar, cast, overload
 
 from litellm.exceptions import ContextWindowExceededError
@@ -25,6 +24,12 @@ from co_scientist.platform.llm.attempts.escalation import (
     escalation_for_error,
     is_transient_provider_error,
     log_escalation,
+)
+from co_scientist.platform.llm.failure_log import (
+    diagnostic_extra,
+    is_rate_limited,
+    provider_error_fields,
+    rate_limit_reset,
 )
 from co_scientist.platform.llm.request.thinking import failure_context_text
 from co_scientist.platform.llm.telemetry import attempt_span, record_retry, record_retry_reason
@@ -76,16 +81,6 @@ class AttemptPlan:
     max_attempts: int
 
 
-def is_rate_limited(error: Exception) -> bool:
-    """Provider SDKs can surface throttling as generic errors, so text
-    complements the type.
-    """
-    if type(error).__name__ == "RateLimitError":
-        return True
-    text = str(error).lower()
-    return "rate limit" in text or "ratelimit" in text
-
-
 def is_credential_rejected(error: Exception) -> bool:
     """Classify by name rather than importing the provider SDK, which the
     layering keeps inside this gateway.
@@ -99,55 +94,6 @@ def is_credential_rejected(error: Exception) -> bool:
 # Short caps fit ordinary backoff; daily caps require durable parking.
 _PLATFORM_PARK_THRESHOLD_SECONDS = 90.0
 
-# Without headers, a burst estimate stays below the durable park threshold.
-_PER_MINUTE_DEFAULT_SECONDS = 60.0
-
-
-def _next_utc_midnight_epoch(now: float) -> float:
-    current = datetime.fromtimestamp(now, tz=timezone.utc)
-    tomorrow = (current + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
-    return tomorrow.timestamp()
-
-
-def _parse_float(value: str | None) -> float | None:
-    if value is None:
-        return None
-    try:
-        return float(value)
-    except (TypeError, ValueError):
-        return None
-
-
-def _platform_reset_from_headers(error: Exception, now: float) -> tuple[float, str] | None:
-    """LiteLLM exposes upstream headers through response, not a headers
-    shortcut.
-    """
-    response = getattr(error, "response", None)
-    headers = getattr(response, "headers", None)
-    if not headers:
-        return None
-    retry_after = _parse_float(headers.get("retry-after"))
-    if retry_after is not None:
-        return now + retry_after, "retry_after_header"
-    reset_ms = _parse_float(headers.get("x-ratelimit-reset"))
-    if reset_ms is not None:
-        return reset_ms / 1000.0, "x_ratelimit_reset_header"
-    return None
-
-
-def _platform_reset_from_message(error: Exception, now: float) -> tuple[float, str] | None:
-    """Without headers, daily caps use UTC reset; short burst waits stay
-    below the park threshold.
-    """
-    # OpenRouter hyphenates free-models-per-day; accept plain-English wording
-    # too.
-    text = str(error).lower()
-    if "per day" in text or "per-day" in text:
-        return _next_utc_midnight_epoch(now), "message_per_day"
-    if "per minute" in text or "per-minute" in text or "free-models" in text:
-        return now + _PER_MINUTE_DEFAULT_SECONDS, "message_per_minute"
-    return None
-
 
 def platform_rate_limit_park(
     error: Exception,
@@ -156,7 +102,7 @@ def platform_rate_limit_park(
     in ordinary backoff.
     """
     now = time.time()
-    resolved = _platform_reset_from_headers(error, now) or _platform_reset_from_message(error, now)
+    resolved = rate_limit_reset(error, now)
     if resolved is None:
         return None
     resume_at, reason = resolved
@@ -257,6 +203,12 @@ def _log_failure(error: Exception, attempt: Attempt) -> None:
         attempt.number,
         failure_context_text(error),
         short_error_text(error),
+        extra=diagnostic_extra(
+            "llm.call_failed",
+            attempt=attempt.number,
+            final=attempt.is_final,
+            **provider_error_fields(error),
+        ),
     )
 
 

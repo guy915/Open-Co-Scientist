@@ -7,7 +7,7 @@ from collections.abc import Awaitable, Callable, Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar, copy_context
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Final
 
 from co_scientist.core.exceptions import (
     FreeModelEligibilityError,
@@ -203,6 +203,22 @@ def _field(value: Any, name: str, default: Any = None) -> Any:
     return value.get(name, default) if isinstance(value, dict) else getattr(value, name, default)
 
 
+# A free route that has shown no answer text by this point gives way to the
+# next slot, so a slow free model cannot use the whole interview deadline.
+_FREE_ANSWER_SECONDS: Final[float] = 90.0
+
+
+def _answer_delta(chunk: Any) -> bool:
+    choices = _field(chunk, "choices", ()) or ()
+    for choice in choices:
+        delta = _field(choice, "delta") or _field(choice, "message")
+        if delta is not None and any(
+            _field(delta, name) for name in ("content", "tool_calls", "function_call")
+        ):
+            return True
+    return False
+
+
 def _visible_delta(chunk: Any) -> bool:
     choices = _field(chunk, "choices", ()) or ()
     for choice in choices:
@@ -253,8 +269,13 @@ class _InterviewRoutedStream:
         self._sticky = sticky
         self._role = role
         self._context = copy_context()
-        self._deadline = asyncio.get_running_loop().time() + float(args.get("timeout", 600))
+        now = asyncio.get_running_loop().time()
+        self._deadline = now + float(args.get("timeout", 600))
+        self._answer_deadline = (
+            now + _FREE_ANSWER_SECONDS if slot == "openrouter" and self._remaining else None
+        )
         self._visible = False
+        self._answered = False
         self._done = False
 
     def __aiter__(self) -> _InterviewRoutedStream:
@@ -360,16 +381,38 @@ class _InterviewRoutedStream:
             self._response = response
             self._iterator = response.__aiter__()
             self._active_closed = False
+            self._answer_deadline = None
             return True
         return False
 
+    def _chunk_timeout(self) -> tuple[float, bool]:
+        """Returns the wait for the next chunk and whether it ends at the
+        free answer deadline rather than the whole stream deadline.
+        """
+        remaining = self._remaining_seconds()
+        if self._answer_deadline is None or self._answered:
+            return remaining, False
+        answer = self._answer_deadline - asyncio.get_running_loop().time()
+        if answer < remaining:
+            return max(answer, 0.0), True
+        return remaining, False
+
     async def _read_chunk(self) -> tuple[bool, Any]:
+        cutoff = False
         try:
-            chunk = await asyncio.wait_for(
-                self._iterator.__anext__(), timeout=self._remaining_seconds()
-            )
+            timeout, cutoff = self._chunk_timeout()
+            chunk = await asyncio.wait_for(self._iterator.__anext__(), timeout=timeout)
         except asyncio.TimeoutError as error:
             await self._close_active()
+            if cutoff:
+                # Shown reasoning is not an answer; a fresh draft replaces it.
+                logger.warning(
+                    "Free route gave no answer within %ss; switching provider",
+                    _FREE_ANSWER_SECONDS,
+                    extra={"diagnostic_event": "llm.free_route_slow"},
+                )
+                if await self._advance("slow_free_route", self._sticky):
+                    return True, None
             self._done = True
             if self._visible:
                 raise ProviderAdmissionError(
@@ -451,6 +494,7 @@ class _InterviewRoutedStream:
             if await self._handle_terminal(chunk):
                 continue
             self._visible = self._visible or _visible_delta(chunk)
+            self._answered = self._answered or _answer_delta(chunk)
             return chunk
 
     async def aclose(self) -> None:

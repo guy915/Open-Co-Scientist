@@ -18,7 +18,7 @@ _EXTRA_PROVIDER_MODELS: dict[str, tuple[str, ...]] = {
     ),
     "openai": ("openai/gpt-6-astra", "openai/gpt-6-luna"),
     "openrouter": (
-        "openrouter/inclusionai/ling-3.1-flash",
+        "openrouter/inclusionai/ling-3.2-flash:free",
         "openrouter/nvidia/nemotron-3-ultra-550b-a55b:free",
         "openrouter/deepseek/deepseek-v4-flash",
         "openrouter/deepseek/deepseek-v4-pro",

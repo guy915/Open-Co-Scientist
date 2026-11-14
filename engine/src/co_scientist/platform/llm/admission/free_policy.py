@@ -1,5 +1,6 @@
 import asyncio
 import contextlib
+import logging
 import os
 import threading
 import time
@@ -266,6 +267,24 @@ def _routes(args: dict[str, Any], body: dict[str, Any]) -> list[str]:
     return [primary.removeprefix("openrouter/"), *fallbacks]
 
 
+_shed_reported: set[str] = set()
+
+
+def _report_shed_primary(primary: str, selected: str) -> None:
+    """A shed primary silently changes the model users get; the fallback can
+    be far slower. Report it once per process so an operator replaces it.
+    """
+    if primary in _shed_reported:
+        return
+    _shed_reported.add(primary)
+    logging.getLogger(__name__).error(
+        "Free primary route %s is no longer zero-cost; using fallback %s",
+        primary,
+        selected,
+        extra={"diagnostic_event": "llm.free_primary_shed"},
+    )
+
+
 async def enforce_free_request(args: dict[str, Any], *, byok: bool = False) -> bool:
     """Process-wide free-only mode overrides BYOK; a deployment key is not
     evidence of caller-owned credentials.
@@ -292,6 +311,8 @@ async def enforce_free_request(args: dict[str, Any], *, byok: bool = False) -> b
             qualified.append(model)
         if not qualified:
             raise FreeModelEligibilityError("zero-cost declared routes are unavailable")
+        if qualified[0] != routes[0]:
+            _report_shed_primary(routes[0], qualified[0])
         args["model"] = f"openrouter/{qualified[0]}"
         body = {**body, "models": qualified[1:]}
     else:

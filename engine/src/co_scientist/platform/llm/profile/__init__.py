@@ -167,12 +167,25 @@ ROUTES: Final[dict[str, Facts]] = {
     "openrouter/minimax/minimax-m2.7:free": _gateway(_FREE),
     "openrouter/dots-studio/dots-3-note-preview:free": _gateway(_FREE),
     "openrouter/nvidia/nemotron-3.5-lightning:free": _gateway(_FREE),
+    # Default free route. Same family and request shape as Ling 3.1.
+    "openrouter/inclusionai/ling-3.2-flash:free": {
+        **_gateway(
+            _FREE,
+            fallbacks=(
+                "nvidia/nemotron-3-ultra-550b-a55b:free",
+                "nvidia/nemotron-3-super-120b-a12b:free",
+            ),
+        ),
+        "json_object": False,
+    },
     # A zero-priced trial without a ":free" id; zero-cost admission still
-    # checks the live catalog price and expiry.
+    # checks the live catalog price and expiry. The trial ended on 2026-11-13,
+    # so runs that stored this model move to Ling 3.2 first.
     "openrouter/inclusionai/ling-3.1-flash": {
         **_gateway(
             _FREE,
             fallbacks=(
+                "inclusionai/ling-3.2-flash:free",
                 "nvidia/nemotron-3-ultra-550b-a55b:free",
                 "nvidia/nemotron-3-super-120b-a12b:free",
             ),

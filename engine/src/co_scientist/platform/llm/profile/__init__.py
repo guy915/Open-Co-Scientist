@@ -172,23 +172,24 @@ ROUTES: Final[dict[str, Facts]] = {
     "openrouter/nvidia/nemotron-3.5-lightning:free": _gateway(_FREE),
     # The only free OpenRouter route the operator uses: no OpenRouter fallback
     # chain, so a shed or slow route goes straight to the next provider. Its
-    # free host rejects response_format and tool_choice, so the schema rides
-    # in the prompt. Context is 1,048,576 tokens on the free host.
-    "openrouter/thinkingmachines/inkling-2-small:free": {
+    # free host rejects response_format, so the schema rides in the prompt.
+    # Context is 1,048,576 tokens on the free host.
+    "openrouter/inclusionai/ling-3.2-flash:free": {
         **_gateway(_FREE),
         "json_object": False,
         "chat_effort": "high",
         "context_length": 1_048_576,
     },
-    # Earlier defaults. Runs that stored them move to Inkling 2 Small.
-    "openrouter/inclusionai/ling-3.2-flash:free": {
-        **_gateway(_FREE, fallbacks=("thinkingmachines/inkling-2-small:free",)),
+    # OpenRouter serves this free model only to apps on its harness list and
+    # answers 403 to this one. Runs that stored it move to Ling 3.2 Flash.
+    "openrouter/thinkingmachines/inkling-2-small:free": {
+        **_gateway(_FREE, fallbacks=("inclusionai/ling-3.2-flash:free",)),
         "json_object": False,
     },
     # A zero-priced trial without a ":free" id; zero-cost admission still
     # checks the live catalog price and expiry. The trial ended on 2026-11-13.
     "openrouter/inclusionai/ling-3.1-flash": {
-        **_gateway(_FREE, fallbacks=("thinkingmachines/inkling-2-small:free",)),
+        **_gateway(_FREE, fallbacks=("inclusionai/ling-3.2-flash:free",)),
         "json_object": False,
     },
     # Its only host, Nvidia, rejects every response_format.

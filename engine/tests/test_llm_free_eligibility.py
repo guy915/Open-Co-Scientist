@@ -648,7 +648,7 @@ def test_default_model_is_a_declared_free_route_and_old_trial_moves_to_it() -> N
     assert is_free_route(DEFAULT_MODEL)
     for old in (
         "openrouter/inclusionai/ling-3.1-flash",
-        "openrouter/inclusionai/ling-3.2-flash:free",
+        "openrouter/thinkingmachines/inkling-2-small:free",
     ):
         assert model_profile(old).fallbacks == (DEFAULT_MODEL.removeprefix("openrouter/"),)
 
@@ -658,7 +658,7 @@ def test_default_free_route_is_the_only_openrouter_model_and_has_1m_context() ->
     from co_scientist.platform.llm.profile import model_profile
 
     profile = model_profile(DEFAULT_MODEL)
-    assert DEFAULT_MODEL == "openrouter/thinkingmachines/inkling-2-small:free"
+    assert DEFAULT_MODEL == "openrouter/inclusionai/ling-3.2-flash:free"
     assert profile.fallbacks == ()
     assert profile.context_length == 1_048_576
     # The free host accepts no response_format, so the schema rides in the prompt.

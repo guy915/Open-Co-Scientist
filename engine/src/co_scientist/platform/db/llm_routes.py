@@ -6,7 +6,6 @@ from dataclasses import dataclass
 from typing import Literal, cast
 
 from co_scientist.core.admission_windows import utc_day, utc_day_bounds
-from co_scientist.core.config import DEFAULT_MODEL
 from co_scientist.core.exceptions import ProviderAdmissionError
 from co_scientist.platform.db import connect, current_time, transaction
 from co_scientist.platform.db.spend import (
@@ -26,6 +25,13 @@ _ACTIVE_BLOCK = (
     "SELECT unavailable_until FROM llm_route_blocks "
     "WHERE slot='openrouter' AND reason IS NOT NULL AND model=?"
 )
+
+
+def _free_default() -> str:
+    # Imported late: evaluation runs must import config only after they set it.
+    from co_scientist.core.config import DEFAULT_MODEL
+
+    return DEFAULT_MODEL
 
 
 class OpenRouterCapacityError(ProviderAdmissionError):
@@ -111,7 +117,7 @@ def reacquire_forecast(
 def free_available(path: str, ceiling: int) -> bool:
     now = current_time()
     with connect(path) as conn:
-        blocked = conn.execute(_ACTIVE_BLOCK, (DEFAULT_MODEL,)).fetchone()
+        blocked = conn.execute(_ACTIVE_BLOCK, (_free_default(),)).fetchone()
         row = conn.execute(
             "SELECT calls FROM llm_free_calls WHERE day=?", (utc_day(now),)
         ).fetchone()
@@ -121,7 +127,7 @@ def free_available(path: str, ceiling: int) -> bool:
 def reserve_free_call(conn: sqlite3.Connection, ceiling: int) -> None:
     now = current_time()
     day = utc_day(now)
-    blocked = conn.execute(_ACTIVE_BLOCK, (DEFAULT_MODEL,)).fetchone()
+    blocked = conn.execute(_ACTIVE_BLOCK, (_free_default(),)).fetchone()
     row = conn.execute("SELECT calls FROM llm_free_calls WHERE day=?", (day,)).fetchone()
     if ceiling <= 0 or (blocked and now < blocked[0]) or (row is not None and row[0] >= ceiling):
         raise OpenRouterCapacityError(UNAVAILABLE)
@@ -134,7 +140,7 @@ def reserve_free_call(conn: sqlite3.Connection, ceiling: int) -> None:
 
 
 def exhaust_free_routes(
-    path: str, until: float | None = None, *, reason: str, model: str = DEFAULT_MODEL
+    path: str, until: float | None = None, *, reason: str, model: str | None = None
 ) -> float:
     """Block the free route for ``model`` until ``until``, or to the end of
     the UTC day, for ``reason``.
@@ -142,6 +148,7 @@ def exhaust_free_routes(
     Returns the time the block ends.
     """
     end = utc_day_bounds(current_time())[1] if until is None else until
+    model = _free_default() if model is None else model
     with transaction(path) as conn:
         conn.execute(
             "INSERT INTO llm_route_blocks (slot,unavailable_until,reason,model) "

@@ -18,10 +18,20 @@ from co_scientist.platform.db.spend import (
 Slot = Literal["openrouter", "anthropic", "azure"]
 
 
-# A block without a reason predates causes being kept and is ignored.
+# A block holds only for the free model that failed, so changing the default
+# free model lifts it. A block without a cause or model predates both being
+# kept and is ignored.
 _ACTIVE_BLOCK = (
-    "SELECT unavailable_until FROM llm_route_blocks WHERE slot='openrouter' AND reason IS NOT NULL"
+    "SELECT unavailable_until FROM llm_route_blocks "
+    "WHERE slot='openrouter' AND reason IS NOT NULL AND model=?"
 )
+
+
+def _free_default() -> str:
+    # Imported late: evaluation runs must import config only after they set it.
+    from co_scientist.core.config import DEFAULT_MODEL
+
+    return DEFAULT_MODEL
 
 
 class OpenRouterCapacityError(ProviderAdmissionError):
@@ -107,7 +117,7 @@ def reacquire_forecast(
 def free_available(path: str, ceiling: int) -> bool:
     now = current_time()
     with connect(path) as conn:
-        blocked = conn.execute(_ACTIVE_BLOCK).fetchone()
+        blocked = conn.execute(_ACTIVE_BLOCK, (_free_default(),)).fetchone()
         row = conn.execute(
             "SELECT calls FROM llm_free_calls WHERE day=?", (utc_day(now),)
         ).fetchone()
@@ -117,7 +127,7 @@ def free_available(path: str, ceiling: int) -> bool:
 def reserve_free_call(conn: sqlite3.Connection, ceiling: int) -> None:
     now = current_time()
     day = utc_day(now)
-    blocked = conn.execute(_ACTIVE_BLOCK).fetchone()
+    blocked = conn.execute(_ACTIVE_BLOCK, (_free_default(),)).fetchone()
     row = conn.execute("SELECT calls FROM llm_free_calls WHERE day=?", (day,)).fetchone()
     if ceiling <= 0 or (blocked and now < blocked[0]) or (row is not None and row[0] >= ceiling):
         raise OpenRouterCapacityError(UNAVAILABLE)
@@ -129,19 +139,23 @@ def reserve_free_call(conn: sqlite3.Connection, ceiling: int) -> None:
     conn.execute("DELETE FROM llm_free_calls WHERE day<?", (day - 7,))
 
 
-def exhaust_free_routes(path: str, until: float | None = None, *, reason: str) -> float:
-    """Block the free route until ``until``, or to the end of the UTC day,
-    for ``reason``.
+def exhaust_free_routes(
+    path: str, until: float | None = None, *, reason: str, model: str | None = None
+) -> float:
+    """Block the free route for ``model`` until ``until``, or to the end of
+    the UTC day, for ``reason``.
 
     Returns the time the block ends.
     """
     end = utc_day_bounds(current_time())[1] if until is None else until
+    model = _free_default() if model is None else model
     with transaction(path) as conn:
         conn.execute(
-            "INSERT INTO llm_route_blocks (slot,unavailable_until,reason) "
-            "VALUES ('openrouter',?,?) ON CONFLICT(slot) DO UPDATE SET "
-            "unavailable_until=excluded.unavailable_until,reason=excluded.reason",
-            (end, reason),
+            "INSERT INTO llm_route_blocks (slot,unavailable_until,reason,model) "
+            "VALUES ('openrouter',?,?,?) ON CONFLICT(slot) DO UPDATE SET "
+            "unavailable_until=excluded.unavailable_until,reason=excluded.reason,"
+            "model=excluded.model",
+            (end, reason, model),
         )
     return end
 

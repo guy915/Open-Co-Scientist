@@ -236,7 +236,7 @@ jobs:
       - name: Upload checked run databases and receipts
         if: always() && steps.artifact_safety.outcome == 'success'
         timeout-minutes: 10
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: benchmark-${{ inputs.tier }}-${{ inputs.label }}
           path: benchmark-artifacts/
@@ -322,7 +322,7 @@ jobs:
       - name: Upload paired table, judgments and receipts
         if: always() && steps.artifact_safety.outcome == 'success'
         timeout-minutes: 10
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: paired-quality-${{ inputs.label }}
           path: |
@@ -384,7 +384,7 @@ jobs:
         run: cat launch-artifacts/quality.md >> "$GITHUB_STEP_SUMMARY"
       - name: Upload checked report only
         if: always() && steps.report_safety.outcome == 'success'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: launch-quality-${{ inputs.label }}
           path: |

@@ -142,6 +142,16 @@ def test_a_turn_without_questions_does_not_announce_a_card(
     assert turn["content"] == "Hello. I can help you scope a research goal."
 
 
+def test_a_greeting_that_asks_nothing_gets_no_recovered_card(
+    isolated_db: str, monkeypatch: pytest.MonkeyPatch, reachable_provider: None
+) -> None:
+    prose = "Hello. Tell me the question or hypothesis you want to explore."
+    turn = _created_turn(monkeypatch, _wire_turn(_response(prose)), repaired=_QUESTIONS)
+
+    assert turn["questions"] == []
+    assert turn["content"] == prose
+
+
 def test_a_turn_with_questions_keeps_its_lead_in(
     isolated_db: str, monkeypatch: pytest.MonkeyPatch, reachable_provider: None
 ) -> None:

@@ -156,6 +156,10 @@ async def _with_repaired_questions(
     """
     if turn.questions or turn.completed or turn.fallback:
         return turn
+    if "?" not in turn.message:
+        # A turn that asks nothing, such as a greeting that invites the
+        # scientist to describe a goal, has no question to recover.
+        return dataclasses.replace(turn, message=question_repair.without_card_lead_in(turn.message))
     if on_phase is not None:
         await on_phase(PHASE_QUESTIONS)
     questions = await question_repair.repair_questions(turn.message)

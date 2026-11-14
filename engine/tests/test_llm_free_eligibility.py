@@ -649,18 +649,19 @@ def test_default_model_is_a_declared_free_route_and_old_trial_moves_to_it() -> N
     for old in (
         "openrouter/inclusionai/ling-3.1-flash",
         "openrouter/inclusionai/ling-3.2-flash:free",
+        "openrouter/thinkingmachines/inkling-2-small:free",
     ):
         assert model_profile(old).fallbacks == (DEFAULT_MODEL.removeprefix("openrouter/"),)
 
 
-def test_default_free_route_is_the_only_openrouter_model_and_has_1m_context() -> None:
+def test_default_free_route_is_the_only_openrouter_model_and_has_a_1m_context() -> None:
     from co_scientist.core.config import DEFAULT_MODEL
     from co_scientist.platform.llm.profile import model_profile
 
     profile = model_profile(DEFAULT_MODEL)
-    assert DEFAULT_MODEL == "openrouter/thinkingmachines/inkling-2-small:free"
+    assert DEFAULT_MODEL == "openrouter/nvidia/nemotron-3.5-super-vl:free"
     assert profile.fallbacks == ()
-    assert profile.context_length == 1_048_576
+    assert profile.context_length == 1_000_000
     # The free host accepts no response_format, so the schema rides in the prompt.
     assert profile.json_object is False
     assert profile.json_schema is False

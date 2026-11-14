@@ -198,7 +198,7 @@ that later analyzes it. Use the benchmark receipt to verify it.
 
 ```bash
 # One comparison command; only this explicit mode makes free-route judge calls:
-MODEL_NAME=openrouter/thinkingmachines/inkling-2-small:free \
+MODEL_NAME=openrouter/nvidia/nemotron-3.5-super-vl:free \
   .venv/bin/python -m evaluations.benchmark_transport compare pairs.json --live-judge --output results/paired
 
 # Hermetic replay of saved judgments (no provider imports or network):

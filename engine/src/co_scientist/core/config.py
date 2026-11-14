@@ -7,7 +7,7 @@ from co_scientist.core.constants import (
     THINKING_FLOOR_MAX_TOKENS as THINKING_FLOOR_MAX_TOKENS,
 )
 
-DEFAULT_MODEL = "openrouter/thinkingmachines/inkling-2-small:free"
+DEFAULT_MODEL = "openrouter/nvidia/nemotron-3.5-super-vl:free"
 THINKING_FLOOR_TIMEOUT_SECONDS = float(THINKING_FLOOR_MAX_TOKENS) / 75.0
 
 

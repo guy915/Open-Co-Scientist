@@ -8,6 +8,7 @@ from typing import Any
 
 import httpx
 import pytest
+from co_scientist.core.config import DEFAULT_MODEL
 from co_scientist.core.exceptions import ProviderAdmissionError
 from co_scientist.platform.db import connect, runs, transaction
 from co_scientist.platform.db.llm_routes import (
@@ -191,6 +192,11 @@ def test_a_block_without_a_cause_no_longer_holds_the_free_route(
             "INSERT INTO llm_route_blocks (slot,unavailable_until) VALUES ('openrouter',?)",
             (250000.0,),
         )
+    assert free_available(path, 10)
+    # A block for a model that is no longer the free default does not hold.
+    llm_routes.exhaust_free_routes(
+        path, 250000.0, reason="provider_quota", model="openrouter/retired/model:free"
+    )
     assert free_available(path, 10)
     llm_routes.exhaust_free_routes(path, 250000.0, reason="provider_quota")
     assert not free_available(path, 10)
@@ -1196,7 +1202,7 @@ def test_a_per_minute_rate_limit_blocks_the_free_route_briefly(
     monkeypatch.setattr("co_scientist.platform.db.current_time", lambda: 200000.0)
     error = _ProviderError('{"error":{"message":"Rate limit exceeded","code":429}}', 429)
 
-    routing._note_failure(path, "openrouter", "openrouter/x:free", error, "provider_quota")
+    routing._note_failure(path, "openrouter", DEFAULT_MODEL, error, "provider_quota")
 
     assert not free_available(path, 10)
     monkeypatch.setattr(llm_routes, "current_time", lambda: 200061.0)
@@ -1227,7 +1233,7 @@ def test_only_lasting_failures_block_the_free_route_all_day(
     monkeypatch.setattr(llm_routes, "current_time", lambda: 200000.0)
     monkeypatch.setattr("co_scientist.platform.llm.failure_log.time.time", lambda: 200000.0)
 
-    routing._note_failure(path, "openrouter", "openrouter/x:free", error, "provider_quota")
+    routing._note_failure(path, "openrouter", DEFAULT_MODEL, error, "provider_quota")
 
     monkeypatch.setattr(llm_routes, "current_time", lambda: 200000.0 + 3600)
     assert free_available(path, 10) is not blocks_all_day
@@ -1245,7 +1251,7 @@ def test_a_provider_failure_logs_why_without_secrets(
         429,
     )
     with caplog.at_level("WARNING", logger="co_scientist.platform.llm.failure_log"):
-        routing._note_failure(path, "openrouter", "openrouter/x:free", error, "provider_quota")
+        routing._note_failure(path, "openrouter", DEFAULT_MODEL, error, "provider_quota")
 
     line = diagnostic_projection(caplog.records[-1]).getMessage()
     assert "event=llm.provider_failure" in line

@@ -86,7 +86,7 @@ CREATE TABLE IF NOT EXISTS llm_routes (
     forecast_microeur INTEGER NOT NULL CHECK(forecast_microeur >= 0)
 );
 CREATE TABLE IF NOT EXISTS llm_route_blocks (
-    slot TEXT PRIMARY KEY, unavailable_until REAL NOT NULL, reason TEXT
+    slot TEXT PRIMARY KEY, unavailable_until REAL NOT NULL, reason TEXT, model TEXT
 );
 CREATE TABLE IF NOT EXISTS llm_free_calls (
     day INTEGER PRIMARY KEY, calls INTEGER NOT NULL
@@ -873,4 +873,6 @@ ADDED_COLUMNS = (
     # NULL marks a block from before blocks kept their cause; those blocks
     # used an all-day rule for any error, so they no longer hold.
     ("llm_route_blocks", "reason", "TEXT"),
+    # A block holds only for the free model that failed; NULL predates this.
+    ("llm_route_blocks", "model", "TEXT"),
 )

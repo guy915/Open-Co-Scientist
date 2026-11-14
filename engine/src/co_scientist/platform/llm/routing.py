@@ -584,7 +584,7 @@ def _free_route_block_until(error: Exception) -> float | None:
 def _note_failure(path: str, slot: Slot, model: str, error: Exception, reason: str) -> None:
     """Block the free route when it failed, and log why the call moves on."""
     blocked = (
-        exhaust_free_routes(path, _free_route_block_until(error), reason=reason)
+        exhaust_free_routes(path, _free_route_block_until(error), reason=reason, model=model)
         if slot == "openrouter" and reason in ("free_route_unavailable", "provider_quota")
         else None
     )

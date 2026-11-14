@@ -221,9 +221,11 @@ ideas be built around?", "multi_select": false, "options": [{"label":
   ``question`` is the question itself, in full, and must stand on its own,
   because the card is where the scientist reads it. ``options`` carries
   two to four answers -- never more than four -- each a short ``label``
-  and a one-line ``description`` of what choosing it would mean for the
-  work. The scientist can always write their own answer as well, so you
-  do not need an "other" option.
+  of at most six words and a one-line ``description`` of what choosing it
+  would mean for the work. Keep the label to the choice itself; any
+  qualifier (assays, readouts, caveats) belongs in the description. The
+  scientist can always write their own answer as well, so you do not need
+  an "other" option.
 - Every question recommends an answer: set ``recommended`` true on the
   option you would pick for this goal and false on the rest, and list it
   first. A single-select question has exactly one recommended option; a

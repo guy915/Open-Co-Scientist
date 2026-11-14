@@ -43,8 +43,12 @@ from co_scientist.platform.llm.admission.spend import (
     require_enabled,
     scoped_run_spending,
 )
-from co_scientist.platform.llm.attempts.retry import is_rate_limited, rate_limit_reset
-from co_scientist.platform.llm.failure_log import diagnostic_extra, log_provider_failure
+from co_scientist.platform.llm.failure_log import (
+    diagnostic_extra,
+    is_rate_limited,
+    log_provider_failure,
+    rate_limit_reset,
+)
 from co_scientist.platform.llm.profile import HAIKU, is_free_route, model_profile
 from co_scientist.platform.llm.roles import current_call_policy
 

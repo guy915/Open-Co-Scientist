@@ -13,6 +13,8 @@ from __future__ import annotations
 import json
 import logging
 import re
+import time
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -95,8 +97,78 @@ def log_provider_failure(
     )
 
 
+def is_rate_limited(error: Exception) -> bool:
+    """Provider SDKs can surface throttling as generic errors, so text
+    complements the type.
+    """
+    if type(error).__name__ == "RateLimitError":
+        return True
+    text = str(error).lower()
+    return "rate limit" in text or "ratelimit" in text
+
+
+# Without headers, a burst estimate stays below the durable park threshold.
+_PER_MINUTE_DEFAULT_SECONDS = 60.0
+
+
+def _next_utc_midnight_epoch(now: float) -> float:
+    current = datetime.fromtimestamp(now, tz=timezone.utc)
+    tomorrow = (current + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+    return tomorrow.timestamp()
+
+
+def _parse_float(value: str | None) -> float | None:
+    if value is None:
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _platform_reset_from_headers(error: Exception, now: float) -> tuple[float, str] | None:
+    """LiteLLM exposes upstream headers through response, not a headers
+    shortcut.
+    """
+    response = getattr(error, "response", None)
+    headers = getattr(response, "headers", None)
+    if not headers:
+        return None
+    retry_after = _parse_float(headers.get("retry-after"))
+    if retry_after is not None:
+        return now + retry_after, "retry_after_header"
+    reset_ms = _parse_float(headers.get("x-ratelimit-reset"))
+    if reset_ms is not None:
+        return reset_ms / 1000.0, "x_ratelimit_reset_header"
+    return None
+
+
+def _platform_reset_from_message(error: Exception, now: float) -> tuple[float, str] | None:
+    """Without headers, daily caps use UTC reset; short burst waits stay
+    below the park threshold.
+    """
+    # OpenRouter hyphenates free-models-per-day; accept plain-English wording
+    # too.
+    text = str(error).lower()
+    if "per day" in text or "per-day" in text:
+        return _next_utc_midnight_epoch(now), "message_per_day"
+    if "per minute" in text or "per-minute" in text or "free-models" in text:
+        return now + _PER_MINUTE_DEFAULT_SECONDS, "message_per_minute"
+    return None
+
+
+def rate_limit_reset(error: Exception, now: float | None = None) -> tuple[float, str] | None:
+    """When a rate limit lifts (epoch seconds) and how that was read, if the
+    error says.
+    """
+    now = time.time() if now is None else now
+    return _platform_reset_from_headers(error, now) or _platform_reset_from_message(error, now)
+
+
 __all__ = [
     "diagnostic_extra",
+    "is_rate_limited",
     "log_provider_failure",
     "provider_error_fields",
+    "rate_limit_reset",
 ]

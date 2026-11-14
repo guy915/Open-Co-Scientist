@@ -1207,7 +1207,7 @@ def test_only_lasting_failures_block_the_free_route_all_day(
     from co_scientist.platform.llm import routing
 
     monkeypatch.setattr(llm_routes, "current_time", lambda: 200000.0)
-    monkeypatch.setattr("co_scientist.platform.llm.attempts.retry.time.time", lambda: 200000.0)
+    monkeypatch.setattr("co_scientist.platform.llm.failure_log.time.time", lambda: 200000.0)
 
     routing._note_failure(path, "openrouter", "openrouter/x:free", error, "provider_quota")
 

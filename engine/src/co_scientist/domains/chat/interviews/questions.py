@@ -145,7 +145,10 @@ directions the answer could take rather than guessing at exact values.
 when they are alternatives.
 
 If the turn does not ask the scientist anything, return an empty \
-``question`` and no options. Never invent a question the turn did not ask.
+``question`` and no options. An open invitation to describe a goal in their \
+own words ("tell me what you want to explore") is not a question with \
+answers to click; return nothing for it. Never invent a question the turn \
+did not ask.
 
 The turn:
 ---

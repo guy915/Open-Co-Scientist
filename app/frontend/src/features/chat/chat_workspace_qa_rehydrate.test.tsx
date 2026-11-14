@@ -195,18 +195,19 @@ it('offers a jump to the latest message once the reader scrolls up', async () =>
     'form.reference-composer',
   )!;
   actions.getBoundingClientRect = () =>
-    new DOMRect(0, 1312 - scroller.scrollTop, 100, 24);
+    new DOMRect(0, 1264 - scroller.scrollTop, 100, 24);
   composer.getBoundingClientRect = () => new DOMRect(0, 700, 500, 40);
   const scrollTo = vi.fn();
   scroller.scrollTo = scrollTo;
 
-  // Model the measured auto-rest: the action row sits 12px below the form.
+  // Model the measured auto-rest: the action row ends 12px above the form.
   scroller.scrollTop = 600;
   expect(
     screen.queryByRole('button', {name: 'Jump to latest message'}),
   ).toBeNull();
   const actionGap =
-    actions.getBoundingClientRect().top - composer.getBoundingClientRect().top;
+    composer.getBoundingClientRect().top -
+    actions.getBoundingClientRect().bottom;
   expect(actionGap).toBe(12);
 
   scroller.scrollTop = 500;

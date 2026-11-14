@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from typing import Any
 
 import co_scientist.platform.llm.offline_guard as offline_guard
@@ -186,3 +187,43 @@ async def repair_questions(message: str) -> list[dict[str, Any]]:
         logger.warning("Interview question repair failed", exc_info=True)
         return []
     return normalized_questions([result])
+
+
+# The prompt has a questioning turn end on one short sentence that hands over
+# to the card ("A few choices will pin down the scope."). When the turn ends
+# up with no usable questions, that sentence promises a card that never shows.
+_LEAD_IN_MAX_CHARS = 140
+_LEAD_IN_NOUN = r"(?:choices?|decisions?|questions?|options?)"
+_LEAD_IN = re.compile(
+    rf"\b(?:a few|a couple of|few|one|two|three|some|these|the following|"
+    rf"below)\b.*\b{_LEAD_IN_NOUN}\b"
+    rf"|\b{_LEAD_IN_NOUN}\b.*\b(?:below|pin down|settle|narrow|scope|follow)",
+    re.IGNORECASE,
+)
+
+
+def without_card_lead_in(message: str) -> str:
+    """Drop a closing sentence that leads into a question card that is absent.
+
+    Only a final paragraph that is one short statement announcing choices,
+    decisions, questions or options is dropped; a real closing question (it
+    ends in "?") and longer prose are kept.
+    """
+    body = message.rstrip()
+    head, _, last = body.rpartition("\n\n")
+    sentence = last.strip()
+    if not head.strip() or not sentence:
+        return message
+    plain = sentence.strip("*_ ")
+    if (
+        len(plain) > _LEAD_IN_MAX_CHARS
+        or plain.endswith("?")
+        or re.search(r"[.!:]\s+\S", plain)
+        or not _LEAD_IN.search(plain)
+    ):
+        return message
+    logger.warning(
+        "Interview turn led into a question card it did not carry; dropping the lead-in",
+        extra={"diagnostic_event": "interview.lead_in_without_questions"},
+    )
+    return head.rstrip()

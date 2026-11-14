@@ -132,6 +132,27 @@ def test_a_streamed_turn_carries_its_questions_without_leaking_the_block(
     assert turn["content"] == "Which model system should we build around?"
 
 
+def test_a_turn_without_questions_does_not_announce_a_card(
+    isolated_db: str, monkeypatch: pytest.MonkeyPatch, reachable_provider: None
+) -> None:
+    prose = "Hello. I can help you scope a research goal.\n\nA few choices will pin down the scope."
+    turn = _created_turn(monkeypatch, _wire_turn(_response(prose)), repaired=[])
+
+    assert turn["questions"] == []
+    assert turn["content"] == "Hello. I can help you scope a research goal."
+
+
+def test_a_turn_with_questions_keeps_its_lead_in(
+    isolated_db: str, monkeypatch: pytest.MonkeyPatch, reachable_provider: None
+) -> None:
+    prose = "Context first.\n\nOne decision settles this."
+    wire = _wire_turn({**_response(prose), "questions": _QUESTIONS})
+    turn = _created_turn(monkeypatch, wire, repaired=[])
+
+    assert turn["questions"] == _QUESTIONS
+    assert turn["content"] == prose
+
+
 def test_question_repair_shares_the_interview_turn_budget(
     isolated_db: str, monkeypatch: pytest.MonkeyPatch, reachable_provider: None
 ) -> None:

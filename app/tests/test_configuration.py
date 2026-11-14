@@ -35,13 +35,13 @@ def test_every_default_and_byok_model_is_priced() -> None:
     assert not unpriced, f"models missing from MODEL_PRICING: {unpriced}"
 
 
-def test_the_free_default_route_reasons_at_medium_effort_in_chat() -> None:
+def test_the_free_default_route_reasons_at_high_effort_in_chat() -> None:
     from co_scientist.core.config import DEFAULT_MODEL
     from co_scientist.platform.llm.request.thinking import _apply_thinking_args
     from co_scientist.platform.llm.roles import scoped_call_policy
 
-    kwargs: dict[str, Any] = {"model": DEFAULT_MODEL, "max_tokens": 100}
-    with scoped_call_policy("chat"):
-        _apply_thinking_args(kwargs, DEFAULT_MODEL, True)
-
-    assert kwargs["extra_body"]["reasoning"]["effort"] == "medium"
+    for role in ("chat", "interview"):
+        kwargs: dict[str, Any] = {"model": DEFAULT_MODEL, "max_tokens": 100}
+        with scoped_call_policy(role):
+            _apply_thinking_args(kwargs, DEFAULT_MODEL, True)
+        assert kwargs["extra_body"]["reasoning"]["effort"] == "high"

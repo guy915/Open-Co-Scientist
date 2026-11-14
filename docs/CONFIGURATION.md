@@ -76,7 +76,7 @@ corpora across each named scope. Admission history expires with retention.
 
 ## Models and safety
 
-The default role model is `openrouter/inclusionai/ling-3.2-flash:free`. An unset
+The default role model is `openrouter/thinkingmachines/inkling-2-small:free`. An unset
 claim verifier inherits the worker model; empty chat/supervisor overrides
 fall back to `MODEL_NAME`. See [LLM roles](llm-roles.md). Safety hard blocks
 remain active regardless of semantic assessment settings.

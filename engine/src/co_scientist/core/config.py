@@ -7,7 +7,7 @@ from co_scientist.core.constants import (
     THINKING_FLOOR_MAX_TOKENS as THINKING_FLOOR_MAX_TOKENS,
 )
 
-DEFAULT_MODEL = "openrouter/inclusionai/ling-3.2-flash:free"
+DEFAULT_MODEL = "openrouter/thinkingmachines/inkling-2-small:free"
 THINKING_FLOOR_TIMEOUT_SECONDS = float(THINKING_FLOOR_MAX_TOKENS) / 75.0
 
 

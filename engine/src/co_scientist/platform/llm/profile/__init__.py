@@ -53,6 +53,8 @@ class ModelProfile:
     json_object: bool = True
     # Overrides every caller's tier, chat included.
     pinned_effort: str | None = None
+    # The gateway tier for chat and interview turns on this route only.
+    chat_effort: str | None = None
     # Reasoning APIs reject sampling knobs and want the reasoning-aware cap.
     fixed_sampling: bool = False
     max_completion_tokens: bool = False
@@ -76,6 +78,7 @@ class Facts(TypedDict, total=False):
     json_schema: bool | None
     json_object: bool
     pinned_effort: str | None
+    chat_effort: str | None
     fixed_sampling: bool
     max_completion_tokens: bool
     responses_api: bool
@@ -167,29 +170,25 @@ ROUTES: Final[dict[str, Facts]] = {
     "openrouter/minimax/minimax-m2.7:free": _gateway(_FREE),
     "openrouter/dots-studio/dots-3-note-preview:free": _gateway(_FREE),
     "openrouter/nvidia/nemotron-3.5-lightning:free": _gateway(_FREE),
-    # Default free route. Same family and request shape as Ling 3.1.
+    # The only free OpenRouter route the operator uses: no OpenRouter fallback
+    # chain, so a shed or slow route goes straight to the next provider. Its
+    # free host rejects response_format and tool_choice, so the schema rides
+    # in the prompt. Context is 1,048,576 tokens on the free host.
+    "openrouter/thinkingmachines/inkling-2-small:free": {
+        **_gateway(_FREE),
+        "json_object": False,
+        "chat_effort": "high",
+        "context_length": 1_048_576,
+    },
+    # Earlier defaults. Runs that stored them move to Inkling 2 Small.
     "openrouter/inclusionai/ling-3.2-flash:free": {
-        **_gateway(
-            _FREE,
-            fallbacks=(
-                "nvidia/nemotron-3-ultra-550b-a55b:free",
-                "nvidia/nemotron-3-super-120b-a12b:free",
-            ),
-        ),
+        **_gateway(_FREE, fallbacks=("thinkingmachines/inkling-2-small:free",)),
         "json_object": False,
     },
     # A zero-priced trial without a ":free" id; zero-cost admission still
-    # checks the live catalog price and expiry. The trial ended on 2026-11-13,
-    # so runs that stored this model move to Ling 3.2 first.
+    # checks the live catalog price and expiry. The trial ended on 2026-11-13.
     "openrouter/inclusionai/ling-3.1-flash": {
-        **_gateway(
-            _FREE,
-            fallbacks=(
-                "inclusionai/ling-3.2-flash:free",
-                "nvidia/nemotron-3-ultra-550b-a55b:free",
-                "nvidia/nemotron-3-super-120b-a12b:free",
-            ),
-        ),
+        **_gateway(_FREE, fallbacks=("thinkingmachines/inkling-2-small:free",)),
         "json_object": False,
     },
     # Its only host, Nvidia, rejects every response_format.

@@ -180,6 +180,24 @@ def test_free_slot_cap_is_atomic_and_renews_next_utc_day(
     assert free_available(path, 1)
 
 
+def test_a_block_without_a_cause_no_longer_holds_the_free_route(
+    path: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from co_scientist.platform.db import llm_routes
+
+    monkeypatch.setattr(llm_routes, "current_time", lambda: 200000.0)
+    with transaction(path) as conn:
+        conn.execute(
+            "INSERT INTO llm_route_blocks (slot,unavailable_until) VALUES ('openrouter',?)",
+            (250000.0,),
+        )
+    assert free_available(path, 10)
+    llm_routes.exhaust_free_routes(path, 250000.0, reason="provider_quota")
+    assert not free_available(path, 10)
+    with transaction(path) as conn, pytest.raises(OpenRouterCapacityError):
+        reserve_free_call(conn, 10)
+
+
 @pytest.fixture
 def providers(path: str, monkeypatch: pytest.MonkeyPatch) -> str:
     for name, value in {

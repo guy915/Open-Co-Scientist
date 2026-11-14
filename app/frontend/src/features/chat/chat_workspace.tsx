@@ -489,9 +489,9 @@ function useScrolledAwayFromBottom(
       );
       if (actions && composer) {
         const pastLatestRest =
-          actions.getBoundingClientRect().top -
-            composer.getBoundingClientRect().top -
-            ACTION_ROW_REST_INSET_PX >
+          actions.getBoundingClientRect().bottom -
+            composer.getBoundingClientRect().top +
+            ACTION_ROW_REST_GAP_PX >
           32;
         setAway(pastLatestRest);
         return;
@@ -578,8 +578,9 @@ interface TimelineScrollRefs {
 }
 
 const NO_APPLIED_TOP = -1;
-// The 8px entrance shift settles before the next render; leave a small buffer.
-const ACTION_ROW_REST_INSET_PX = 12;
+// The latest reply's action row rests fully visible this far above the
+// composer, never tucked behind it.
+const ACTION_ROW_REST_GAP_PX = 12;
 
 // Measure at scroll time: asynchronous scroll events can leave a stale bottom
 // flag and undo a reader's gesture.
@@ -629,27 +630,22 @@ function scrollToBottom(
   if (actions && composer && column) {
     // Short chats can reach scrollTop 0 before their actions clear the composer;
     // align the grid tracks to measured content space when no scroll is needed.
-    const actionRect = actions.getBoundingClientRect();
     const composerRect = composer.getBoundingClientRect();
     const scrollerRect = scroller.getBoundingClientRect();
     const topPadding = Number.parseFloat(getComputedStyle(scroller).paddingTop);
     const restingHeight = Math.max(
       0,
-      composerRect.top +
-        ACTION_ROW_REST_INSET_PX +
-        actionRect.height -
-        scrollerRect.top -
-        topPadding,
+      composerRect.top - ACTION_ROW_REST_GAP_PX - scrollerRect.top - topPadding,
     );
     const minHeight = `${Math.ceil(restingHeight)}px`;
     if (column.style.minHeight !== minHeight) {
       column.style.minHeight = minHeight;
     }
-    const actionTop = actions.getBoundingClientRect().top;
+    const actionBottom = actions.getBoundingClientRect().bottom;
     const composerTop = composer.getBoundingClientRect().top;
     scroller.scrollTop = Math.max(
       0,
-      scroller.scrollTop + actionTop - composerTop - ACTION_ROW_REST_INSET_PX,
+      scroller.scrollTop + actionBottom - composerTop + ACTION_ROW_REST_GAP_PX,
     );
   } else {
     if (column) column.style.minHeight = '';

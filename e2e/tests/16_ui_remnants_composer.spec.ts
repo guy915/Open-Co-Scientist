@@ -129,8 +129,9 @@ async function expectAnswerAboveComposer(
           proseClear: Boolean(
             answerBox && answerBox.y + answerBox.height <= layout.composerTop + 1,
           ),
-          actionsBelow: Boolean(
-            actionsBox && actionsBox.y >= layout.composerTop + 0.5,
+          actionsClear: Boolean(
+            actionsBox &&
+              actionsBox.y + actionsBox.height <= layout.composerTop + 1,
           ),
           answerBottom: answerBox ? answerBox.y + answerBox.height : -1,
           actionsTop: actionsBox?.y ?? -1,
@@ -141,7 +142,7 @@ async function expectAnswerAboveComposer(
   try {
     await expect
       .poll(readGeometry, {message: `Answer geometry after ${stage}`, timeout: 10_000})
-      .toMatchObject({proseClear: true, actionsBelow: true});
+      .toMatchObject({proseClear: true, actionsClear: true});
   } catch (error) {
     throw new Error(
       `Answer geometry after ${stage}: ${JSON.stringify(latestGeometry)} (${String(error)})`,

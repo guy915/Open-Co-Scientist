@@ -32,6 +32,9 @@ export function MessageActionRow({
   actions: MessageAction[];
   align?: 'start' | 'end';
 }) {
+  // A prompt's row can sit at the top of the scrolling timeline, which clips
+  // a tooltip above it; the reply below always leaves room underneath.
+  const tooltipPlacement = align === 'end' ? 'bottom' : 'top';
   return (
     <div
       className={
@@ -46,12 +49,14 @@ export function MessageActionRow({
             key={action.label}
             icon={action.icon}
             label={action.label}
+            tooltipPlacement={tooltipPlacement}
             onClick={action.onClick}
           />
         ) : (
           <CopyButton
             key={action.label}
             label={action.label}
+            tooltipPlacement={tooltipPlacement}
             text={action.copyText}
           />
         ),

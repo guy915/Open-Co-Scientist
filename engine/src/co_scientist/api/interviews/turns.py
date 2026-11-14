@@ -160,7 +160,8 @@ async def _with_repaired_questions(
         await on_phase(PHASE_QUESTIONS)
     questions = await question_repair.repair_questions(turn.message)
     if not questions:
-        return turn
+        # Never announce a card that will not open.
+        return dataclasses.replace(turn, message=question_repair.without_card_lead_in(turn.message))
     logger.info("Recovered %d interview question(s) from prose", len(questions))
     return dataclasses.replace(turn, questions=questions)
 

@@ -6,7 +6,10 @@ from typing import Any
 
 import pytest
 from co_scientist.domains.chat.interviews import model as interviews_model
-from co_scientist.domains.chat.interviews.questions import normalized_questions
+from co_scientist.domains.chat.interviews.questions import (
+    normalized_questions,
+    without_card_lead_in,
+)
 from co_scientist.domains.chat.interviews.state_repair import _repair_prompt, repair_turn_state
 
 from ._interviews_helpers import _fake_stream
@@ -186,3 +189,26 @@ def test_a_turn_offers_at_most_three_questions() -> None:
     raw = [{"question": f"Q{index}?", "options": _options(None, None)} for index in range(5)]
 
     assert [question["question"] for question in normalized_questions(raw)] == ["Q0?", "Q1?", "Q2?"]
+
+
+@pytest.mark.parametrize(
+    ("message", "kept"),
+    [
+        ("Hello.\n\nA few choices will pin down the scope.", "Hello."),
+        ("Context.\n\n**One decision settles this.**", "Context."),
+        ("Context.\n\nWhat question do you want to explore?", None),
+        ("Context.\n\nThe main options are kinase and metabolic rewiring.", None),
+        ("Context.\n\nTwo options stand out: A and B.", None),
+        ("A few choices will pin down the scope.", None),
+    ],
+    ids=[
+        "lead-in",
+        "bold-lead-in",
+        "real-question",
+        "statement",
+        "two-sentences",
+        "only-paragraph",
+    ],
+)
+def test_only_a_card_lead_in_is_dropped(message: str, kept: str | None) -> None:
+    assert without_card_lead_in(message) == (message if kept is None else kept)

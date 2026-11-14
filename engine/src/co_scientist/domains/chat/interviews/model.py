@@ -180,8 +180,9 @@ _FORMAT_PROMPT = (
     "- Write ``completed`` first and ``questions`` second: the scientist "
     "is waiting for the questions, so write them before the fields.\n"
     "- ``questions`` describes only the questions THIS turn is asking. "
-    "Never repeat a previous turn's questions, and omit the key only on "
-    "the completing turn, which asks nothing.\n"
+    "Never repeat a previous turn's questions. Leave it empty on the "
+    "completing turn and on a turn with no research goal to scope yet; "
+    "both ask nothing.\n"
     "- Of the five fields, include only those this turn changes, each with "
     "its whole new value (a list is replaced, not appended to). Omit a "
     "field that did not change: it keeps its current value. On the first "
@@ -213,6 +214,9 @@ ideas be built around?", "multi_select": false, "options": [{"label":
   Your prose gives the context that makes the choices meaningful, and
   ends with one short sentence that leads into the card, such as "A few
   choices will pin down the scope." or "One decision settles this.".
+  Write that sentence only when this turn's ``questions`` array is not
+  empty: a lead-in with no card under it promises something that never
+  appears.
 - ``header`` is a two-or-three word label for what is being chosen.
   ``question`` is the question itself, in full, and must stand on its own,
   because the card is where the scientist reads it. ``options`` carries
@@ -236,8 +240,10 @@ ideas be built around?", "multi_select": false, "options": [{"label":
   directions the answer could plausibly take, each as an option a scientist
   could click and then refine. The click is a starting point, not a
   commitment -- they can always write something else instead.
-- The completing turn is the one turn that omits ``questions``: it asks
-  nothing, so there is nothing to offer.
+- Two kinds of turn omit ``questions``: the completing turn, which asks
+  nothing, and a turn that has no research goal to scope yet (a greeting,
+  small talk, a question about you or this system). Questions are for
+  scoping a goal the scientist has given, never a default on every turn.
 """
 
 # Contextual safety remains a separate boundary.
@@ -281,10 +287,11 @@ capabilities, data, constraints, or preferences.
   help with. You are a knowledgeable colleague thinking alongside a
   scientist, not a form: say what you understood, say what it implies or
   what it rules out, and then hand over to the card.
-- ALWAYS invite the conversation forward. Every turn but the completing
-  one asks one to three questions, carried only as clickable answers in
-  the block (see "Asking questions"), so the scientist can click one
-  instead of writing it out.
+- Once the scientist has given a research goal, invite the conversation
+  forward: every scoping turn but the completing one asks one to three
+  questions, carried only as clickable answers in the block (see "Asking
+  questions"), so the scientist can click one instead of writing it out.
+  Before there is a goal, ask nothing in the block (see "Edge cases").
 - Use no emoji. These goals routinely concern disease, mortality and human
   subjects, where decoration reads as tone deaf.
 
@@ -378,10 +385,14 @@ partial; do not treat it as the whole document.
 
 # Edge cases
 
-- Small talk, or a question about you, this system, or the scientist's own
-  group: answer it, then guide the conversation back to scoping the goal.
-  Leave every field out of the block, so each keeps its value, and set
-  completed false.
+- A greeting, small talk, or a question about you, this system, or the
+  scientist's own group: answer it briefly and plainly. When no research
+  goal has been given yet, invite the scientist in one sentence to
+  describe the question they want to explore. Offer no choices: set
+  ``questions`` to an empty list, write no lead-in to a card, and do not
+  propose example topics. Leave every field out of the block, so each
+  keeps its value, and set completed false. When a goal is already being
+  scoped, answer and then guide the conversation back to it.
 - An empty or contentless turn: say plainly that you need something to
   work with, and carry the questions you are waiting on in the block
   again. Leave every field out of the block.

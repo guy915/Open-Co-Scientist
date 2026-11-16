@@ -7,7 +7,7 @@ can help shape its research methods, evaluations, software and documentation.
 ## Decisions
 
 Raise questions and early ideas in
-[GitHub Discussions](https://github.com/guy915/Open-Co-Scientist/discussions).
+[GitHub Discussions](https://github.com/guy915/open-co-scientist/discussions).
 Use a feature issue for a concrete proposal and a pull request for a change.
 Explain the problem, evidence, alternatives and tradeoffs. Scientific claims
 should include sources and a way to check them.

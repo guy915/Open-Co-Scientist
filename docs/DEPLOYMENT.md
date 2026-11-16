@@ -59,7 +59,7 @@ artifacts; keep those exclusions when adding an image or context.
 
 ### Railway source and watch paths
 
-Both services use `guy915/Open-Co-Scientist`, branch `main`, build root `/`,
+Both services use `guy915/open-co-scientist`, branch `main`, build root `/`,
 and their root Dockerfile, with no start-command override. Use the MCP
 service's private DNS hostname in the API's `MCP_SERVER_URL`.
 Set the API healthcheck path to `/health`, restart policy to `ON_FAILURE`

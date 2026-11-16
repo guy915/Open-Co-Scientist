@@ -7,12 +7,12 @@ reproduction, a review, documentation or code. You do not need to write code
 to contribute.
 
 Follow the [Code of Conduct](CODE_OF_CONDUCT.md). Ask questions in
-[GitHub Discussions](https://github.com/guy915/Open-Co-Scientist/discussions).
+[GitHub Discussions](https://github.com/guy915/open-co-scientist/discussions).
 Report vulnerabilities privately through [SECURITY.md](SECURITY.md).
 
 ## Pick an issue or propose a feature
 
-Search [open issues](https://github.com/guy915/Open-Co-Scientist/issues) before
+Search [open issues](https://github.com/guy915/open-co-scientist/issues) before
 starting. The project labels are defined in [.github/labels.yml](.github/labels.yml).
 Start with `good first issue` for bounded work with context, or `help wanted`
 for work the maintainer has opened to contributors. Filter by area:
@@ -30,7 +30,7 @@ approach before starting. If the scope
 is unclear, ask in the issue. This helps avoid overlapping work.
 
 For a feature, use the feature request form from the
-[issue chooser](https://github.com/guy915/Open-Co-Scientist/issues/new/choose).
+[issue chooser](https://github.com/guy915/open-co-scientist/issues/new/choose).
 Describe the problem, your proposal and alternatives. For a research change,
 include the evidence, how to reproduce it and how success will be measured.
 Discuss large changes before implementing them. Use Discussions for early
@@ -41,7 +41,7 @@ ideas that do not yet have a concrete proposal.
 Use Python 3.12, Node.js 22.13 or newer, and Bun 1.3.14.
 
 ```bash
-git clone https://github.com/guy915/Open-Co-Scientist.git
+git clone https://github.com/guy915/open-co-scientist.git
 cd Open-Co-Scientist
 make setup
 make start

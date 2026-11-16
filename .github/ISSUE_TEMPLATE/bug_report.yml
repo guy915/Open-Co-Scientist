@@ -6,7 +6,7 @@ body:
     attributes:
       value: |
         For security vulnerabilities, use a private advisory instead; see
-        [SECURITY.md](https://github.com/guy915/Open-Co-Scientist/blob/main/SECURITY.md).
+        [SECURITY.md](https://github.com/guy915/open-co-scientist/blob/main/SECURITY.md).
         Search existing issues before submitting. Remove credentials and private
         research data from examples, logs and screenshots.
   - type: textarea

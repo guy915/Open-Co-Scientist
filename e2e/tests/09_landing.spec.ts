@@ -122,7 +122,7 @@ for (const theme of ['light', 'dark']) {
       await expect(page.locator('iframe')).toHaveCount(1);
       await expect(page.getByRole('link', {name: 'GitHub', exact: true})).toHaveAttribute(
         'href',
-        'https://github.com/guy915/Open-Co-Scientist',
+        'https://github.com/guy915/open-co-scientist',
       );
       await expect(page.getByRole('navigation', {name: 'Legal information'})).toHaveCount(0);
       await trailer.scrollIntoViewIfNeeded();

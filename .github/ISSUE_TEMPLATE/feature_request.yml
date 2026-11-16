@@ -6,7 +6,7 @@ body:
     attributes:
       value: |
         Search existing issues before submitting. Use
-        [Discussions](https://github.com/guy915/Open-Co-Scientist/discussions)
+        [Discussions](https://github.com/guy915/open-co-scientist/discussions)
         for questions or early ideas. Keep credentials and private research data
         out of examples and attachments.
   - type: textarea

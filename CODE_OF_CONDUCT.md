@@ -40,7 +40,7 @@ This Code of Conduct applies within all community spaces, and also applies when 
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
 reported privately to the maintainer, [@guy915](https://github.com/guy915), using
-[GitHub private reporting](https://github.com/guy915/Open-Co-Scientist/security/advisories/new).
+[GitHub private reporting](https://github.com/guy915/open-co-scientist/security/advisories/new).
 State that the report concerns community conduct. Include enough detail to
 review the incident, and do not post it in a public issue or discussion.
 All complaints will be reviewed and investigated promptly and fairly.

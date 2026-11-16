@@ -2,7 +2,7 @@
 
 ## Report a vulnerability
 
-Use [GitHub private vulnerability reporting](https://github.com/guy915/Open-Co-Scientist/security/advisories/new).
+Use [GitHub private vulnerability reporting](https://github.com/guy915/open-co-scientist/security/advisories/new).
 You can also open the repository's **Security** tab and select
 **Report a vulnerability**. Do not post vulnerabilities in public issues,
 pull requests or discussions.

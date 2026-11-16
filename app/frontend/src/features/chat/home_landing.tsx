@@ -170,7 +170,7 @@ function LandingHero({
               See how it works
             </Button>
             <ExternalLink
-              href="https://github.com/guy915/Open-Co-Scientist"
+              href="https://github.com/guy915/open-co-scientist"
               className={buttonClasses({variant: 'outlined', size: 'lg'})}
             >
               GitHub

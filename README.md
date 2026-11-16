@@ -9,7 +9,7 @@
   <a href="#quick-start"><img src="docs/assets/badges/run-locally-outline.svg" alt="Run it locally"/></a>
   <a href="#how-a-run-works"><img src="docs/assets/badges/how-it-works-outline.svg" alt="How it works"/></a>
   <a href="CONTRIBUTING.md"><img src="docs/assets/badges/contribute-outline.svg" alt="Contribute"/></a>
-  <a href="https://deepwiki.com/guy915/Open-Co-Scientist"><img src="docs/assets/badges/deepwiki-outline.svg" alt="DeepWiki"/></a>
+  <a href="https://deepwiki.com/guy915/open-co-scientist"><img src="docs/assets/badges/deepwiki-outline.svg" alt="DeepWiki"/></a>
   <a href="https://doi.org/10.5281/zenodo.23366148"><img src="docs/assets/badges/zenodo-doi-outline.svg" alt="DOI 10.5281/zenodo.23366148"/></a>
 </p>
 
@@ -92,7 +92,7 @@ You need Python 3.12, Node.js 22.13+ and Bun 1.3.14 on macOS or Linux (on
 Windows, use WSL2).
 
 ```bash
-git clone https://github.com/guy915/Open-Co-Scientist.git
+git clone https://github.com/guy915/open-co-scientist.git
 cd Open-Co-Scientist
 make setup    # Python virtual environment and locked frontend dependencies
 make start    # API on :8008, workbench on :5173, MCP server on :8888
@@ -154,7 +154,7 @@ database tools. Read the [architecture](docs/ARCHITECTURE.md), the
 Scientists and developers are both welcome. You can report a bug, propose a
 research question or an evaluation dataset, reproduce a result, or send code.
 Start with [CONTRIBUTING.md](CONTRIBUTING.md), and ask questions in
-[Discussions](https://github.com/guy915/Open-Co-Scientist/discussions).
+[Discussions](https://github.com/guy915/open-co-scientist/discussions).
 Everyone follows the [Code of Conduct](CODE_OF_CONDUCT.md). Report
 vulnerabilities privately as described in [SECURITY.md](SECURITY.md).
 

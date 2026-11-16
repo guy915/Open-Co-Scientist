@@ -8,14 +8,14 @@ or guaranteed response time.
 ## Questions and ideas
 
 Ask about setup, use, research workflows and early ideas in
-[GitHub Discussions](https://github.com/guy915/Open-Co-Scientist/discussions).
+[GitHub Discussions](https://github.com/guy915/open-co-scientist/discussions).
 Search existing discussions first. Include what you are trying to do, what you
 tried and the relevant software versions.
 
 ## Bugs and feature proposals
 
 Report reproducible bugs through the
-[issue forms](https://github.com/guy915/Open-Co-Scientist/issues/new/choose).
+[issue forms](https://github.com/guy915/open-co-scientist/issues/new/choose).
 Include steps to reproduce, expected and actual behavior, and whether you used
 the offline backend or a model provider. A small example helps.
 Use the feature form for a concrete proposal. See
